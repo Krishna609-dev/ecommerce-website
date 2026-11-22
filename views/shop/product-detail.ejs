@@ -1,0 +1,564 @@
+<%- include('../partials/header', { title: product.name }) %>
+<%- include('../partials/flash') %>
+
+<%
+  var productId = String(product._id);
+  var categoryName = product.category ? product.category.name : 'Electronics';
+  var hasImages = product.images && product.images.length > 0;
+  
+  function getImgUrl(img) {
+    if (!img) return '/uploads/iphone-16-pro-front.jpg';
+    if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('/')) {
+      return img;
+    }
+    return '/uploads/' + encodeURIComponent(img);
+  }
+
+  var mainImgSrc = hasImages ? getImgUrl(product.images[0]) : '/uploads/iphone-16-pro-front.jpg';
+  var discountPercent = 18;
+  var originalPrice = Math.round(product.price * (1 + discountPercent / 100));
+  var savingsAmount = originalPrice - product.price;
+  var emiAmount = Math.round(product.price / 12);
+%>
+
+<section class="container py-3 py-md-4">
+
+  <!-- Breadcrumbs -->
+  <nav aria-label="Breadcrumb" class="mb-3">
+    <ol class="breadcrumb small">
+      <li class="breadcrumb-item"><a href="/" class="text-decoration-none text-secondary"><i class="bi bi-house-door me-1"></i>Home</a></li>
+      <li class="breadcrumb-item"><a href="/?category=<%= product.category ? encodeURIComponent(String(product.category._id || '')) : '' %>" class="text-decoration-none text-secondary"><%= categoryName %></a></li>
+      <li class="breadcrumb-item active text-dark fw-semibold text-truncate" aria-current="page" style="max-width: 300px;"><%= product.name %></li>
+    </ol>
+  </nav>
+
+  <div class="row g-4 g-lg-5 align-items-start">
+
+    <!-- Left Column: Gallery & High-Res Stage -->
+    <div class="col-12 col-lg-6">
+      <div class="product-gallery-card">
+        <!-- Main Image Stage -->
+        <div class="detail-main-stage">
+          <img
+            class="detail-stage-img"
+            id="productMainImage"
+            src="<%= mainImgSrc %>"
+            alt="<%= product.name %>"
+          >
+          <span class="badge bg-dark text-white position-absolute top-0 start-0 m-3 small px-2 py-1 rounded">
+            <i class="bi bi-shield-check text-success me-1"></i> Verified Authentic
+          </span>
+        </div>
+
+        <!-- Thumbnails Strip -->
+        <% if (hasImages && product.images.length > 1) { %>
+          <div class="thumbnail-strip" aria-label="Product image thumbnails">
+            <% product.images.forEach(function (image, index) { 
+              var thumbSrc = getImgUrl(image);
+            %>
+              <button
+                class="detail-thumb-btn <%= index === 0 ? 'active' : '' %>"
+                type="button"
+                data-image-src="<%= thumbSrc %>"
+                data-image-alt="<%= product.name %> view <%= index + 1 %>"
+                aria-label="View <%= product.name %> angle <%= index + 1 %>"
+              >
+                <img src="<%= thumbSrc %>" alt="">
+              </button>
+            <% }) %>
+          </div>
+        <% } %>
+
+        <div class="text-center mt-3">
+          <span class="text-muted small"><i class="bi bi-zoom-in me-1"></i> Hover to zoom • Click thumbnail to inspect angle</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Column: Product Details & Actions -->
+    <div class="col-12 col-lg-6">
+
+      <!-- Category & Brand Badge -->
+      <div class="d-flex align-items-center gap-2 mb-2">
+        <span class="spec-badge">
+          <i class="bi bi-tag-fill"></i> <%= categoryName %>
+        </span>
+        <span class="badge bg-warning text-dark px-2 py-1 fw-bold">
+          <i class="bi bi-award-fill me-1"></i> Prime Tech Choice
+        </span>
+      </div>
+
+      <!-- Title -->
+      <h1 class="detail-title"><%= product.name %></h1>
+
+      <!-- Customer Reviews Summary -->
+      <div class="d-flex flex-wrap align-items-center gap-2 mb-3">
+        <div class="stars-gold fs-6">
+          <i class="bi bi-star-fill"></i>
+          <i class="bi bi-star-fill"></i>
+          <i class="bi bi-star-fill"></i>
+          <i class="bi bi-star-fill"></i>
+          <i class="bi bi-star-half"></i>
+        </div>
+        <a href="#reviews" class="text-decoration-none fw-semibold text-primary small">
+          4.8 (2,430 ratings)
+        </a>
+        <span class="text-secondary small">•</span>
+        <a href="#specs" class="text-decoration-none text-secondary small">
+          350+ Answered questions
+        </a>
+      </div>
+
+      <!-- Price & EMI Panel-->
+      <div class="detail-price-panel">
+        <div class="d-flex align-items-baseline gap-2 mb-1">
+          <span class="deal-discount-pill">-<%= discountPercent %>%</span>
+          <span class="deal-price-text">&#8377;<%= Number(product.price).toLocaleString('en-IN') %></span>
+        </div>
+        <div class="small text-secondary mb-2">
+          M.R.P.: <span class="text-decoration-line-through">&#8377;<%= Number(originalPrice).toLocaleString('en-IN') %></span>
+          <span class="text-success fw-bold ms-2">You save &#8377;<%= Number(savingsAmount).toLocaleString('en-IN') %> (<%= discountPercent %>%)</span>
+        </div>
+        <div class="small text-dark fw-semibold mb-2">
+          Inclusive of all taxes
+        </div>
+        <div class="p-2 bg-white rounded border small d-flex align-items-center justify-content-between">
+          <span><i class="bi bi-credit-card-2-front text-primary me-2"></i> <strong>No Cost EMI</strong> starts at &#8377;<%= emiAmount.toLocaleString('en-IN') %>/mo</span>
+          <a href="#offers" class="text-primary text-decoration-none fw-semibold">View plans</a>
+        </div>
+      </div>
+
+      <!-- Bank & Festive Offers Card -->
+      <div class="offers-box" id="offers">
+        <div class="d-flex align-items-center gap-2 mb-2">
+          <i class="bi bi-tags-fill text-warning fs-5"></i>
+          <span class="fw-bold text-dark">Available Offers</span>
+        </div>
+        <ul class="list-unstyled mb-0 small">
+          <li class="mb-2 d-flex align-items-start gap-2">
+            <span class="offer-badge badge bg-warning text-dark">Bank Offer</span>
+            <span>Up to <strong>&#8377;5,000 Instant Discount</strong> on HDFC & ICICI Credit Card EMI transactions.</span>
+          </li>
+          <!-- <li class="mb-2 d-flex align-items-start gap-2">
+            <span class="offer-badge badge bg-success text-white">Coupon</span>
+            <span>Apply code <strong class="text-primary">WELCOME10</strong> at checkout for flat discount on your cart.</span>
+          </li> -->
+          <li class="d-flex align-items-start gap-2">
+            <span class="offer-badge badge bg-info text-dark">Partner</span>
+            <span>Get 1-Year Free Apple TV+ subscription on purchasing eligible Apple devices.</span>
+          </li>
+        </ul>
+      </div>
+
+      <!-- Stock Urgency & Prime Delivery -->
+      <div class="mb-3">
+        <% if (product.stock > 0) { %>
+          <div class="d-flex align-items-center gap-2 mb-2">
+            <span class="badge bg-success-subtle text-success fs-6 fw-bold px-3 py-1">
+              <i class="bi bi-check-circle-fill me-1"></i> In Stock
+            </span>
+            <span class="text-secondary small">(<%= product.stock %> units available)</span>
+          </div>
+          <div class="text-dark small">
+            <i class="bi bi-truck text-primary me-1 fs-6"></i>
+            Order within <strong class="text-primary">4 hrs 20 mins</strong> to get <strong>FREE Delivery Tomorrow</strong>.
+          </div>
+        <% } else { %>
+          <div class="badge bg-danger fs-6 fw-bold px-3 py-1 mb-2">
+            <i class="bi bi-x-circle me-1"></i> Currently Out of Stock
+          </div>
+          <p class="text-secondary small">We are restocking this item soon. Check back shortly!</p>
+        <% } %>
+      </div>
+
+      <!-- Pincode Delivery Availability Checker -->
+      <div class="card bg-light border-0 p-3 rounded-3 mb-4">
+        <label for="pincodeInput" class="form-label small fw-bold text-dark mb-1">
+          <i class="bi bi-geo-alt-fill text-danger me-1"></i> Check Delivery to Your Location:
+        </label>
+        <div class="pincode-check-wrap">
+          <input
+            type="text"
+            id="pincodeInput"
+            class="form-control form-control-sm"
+            placeholder="Enter 6-digit Pincode (e.g. 560001)"
+            maxlength="6"
+            style="max-width: 220px;"
+          >
+          <button type="button" id="btnCheckPincode" class="btn btn-sm btn-dark">
+            Check
+          </button>
+        </div>
+        <div id="pincodeResult" class="d-none"></div>
+      </div>
+
+      <!-- Trust Badges 4-Box Row -->
+      <div class="row g-2 text-center mb-4">
+        <div class="col-3">
+          <div class="p-2 border rounded-3 bg-white h-100">
+            <i class="bi bi-truck fs-5 text-primary d-block mb-1"></i>
+            <span class="d-block text-dark fw-bold" style="font-size: 0.725rem;">Free Delivery</span>
+          </div>
+        </div>
+        <div class="col-3">
+          <div class="p-2 border rounded-3 bg-white h-100">
+            <i class="bi bi-arrow-repeat fs-5 text-success d-block mb-1"></i>
+            <span class="d-block text-dark fw-bold" style="font-size: 0.725rem;">7 Days Return</span>
+          </div>
+        </div>
+        <div class="col-3">
+          <div class="p-2 border rounded-3 bg-white h-100">
+            <i class="bi bi-shield-check fs-5 text-info d-block mb-1"></i>
+            <span class="d-block text-dark fw-bold" style="font-size: 0.725rem;">1-Yr Warranty</span>
+          </div>
+        </div>
+        <div class="col-3">
+          <div class="p-2 border rounded-3 bg-white h-100">
+            <i class="bi bi-apple fs-5 text-dark d-block mb-1"></i>
+            <span class="d-block text-dark fw-bold" style="font-size: 0.725rem;">Top Tech Brand</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Add to Cart & Wishlist Actions -->
+      <% if (product.stock > 0) { %>
+        <!-- <form action="/cart/add" method="POST" id="productCartForm" class="mb-3"> -->
+        <form action="/cart/add" method="POST" id="productCartForm" class="mb-3">
+
+          <input type="hidden" name="productId" value="<%= productId %>">
+          <input type="hidden" name="quantity" id="cartQuantity" value="1">
+
+          <!-- Quantity Control -->
+          <div class="d-flex align-items-center gap-3 mb-3">
+            <label class="fw-bold text-dark small" for="quantityDisplay">Quantity:</label>
+            <div class="input-group" style="width: 8.5rem;">
+              <button class="btn btn-outline-secondary btn-sm" type="button" id="quantityMinus" aria-label="Decrease quantity">−</button>
+              <output class="form-control form-control-sm text-center fw-bold" id="quantityDisplay" aria-live="polite">1</output>
+              <button class="btn btn-outline-secondary btn-sm" type="button" id="quantityPlus" data-max="<%= product.stock %>" aria-label="Increase quantity">+</button>
+            </div>
+          </div>
+
+          <!-- Add to Cart Button -->
+          <button class="btn btn-primary btn-lg w-100 fw-bold shadow-sm py-3 mb-2" type="submit">
+            <i class="bi bi-cart3 me-2"></i> Add to Cart
+          </button>
+        </form>
+      <% } else { %>
+        <button class="btn btn-secondary btn-lg w-100 mb-3 py-3" type="button" disabled>
+          Out of Stock
+        </button>
+      <% } %>
+
+      <!-- Wishlist Button -->
+      <form
+        action="<%= inWishlist ? '/wishlist/remove/' + encodeURIComponent(productId) + '?_method=DELETE' : '/wishlist/add/' + encodeURIComponent(productId) %>"
+        method="POST"
+        <%= inWishlist ? 'data-confirm="Remove this product from your wishlist?"' : '' %>>
+        <button class="btn <%= inWishlist ? 'btn-outline-danger' : 'btn-outline-secondary' %> w-100 py-2 fw-semibold" type="submit">
+          <i class="bi <%= inWishlist ? 'bi-heart-fill text-danger' : 'bi-heart' %> me-2" aria-hidden="true"></i>
+          <%= inWishlist ? 'Remove from Wishlist' : 'Add to Wishlist' %>
+        </button>
+      </form>
+
+    </div>
+  </div>
+
+  <!-- Product Specifications & Overview Section -->
+  <section class="mt-5 pt-4 border-top" id="specs">
+    <div class="row g-4 g-lg-5">
+      <div class="col-12 col-lg-7">
+        <h2 class="h4 fw-bold text-dark mb-3">Product Description & Highlights</h2>
+        <div class="card border-0 bg-white p-4 rounded-4 shadow-sm mb-4">
+          <p class="text-secondary leading-relaxed mb-0 fs-6">
+            <%= product.description %>
+          </p>
+        </div>
+
+        <h3 class="h5 fw-bold text-dark mb-3">Key Features & In The Box</h3>
+        <ul class="list-group list-group-flush border rounded-3 mb-4">
+          <li class="list-group-item d-flex align-items-center gap-3 py-3">
+            <i class="bi bi-cpu text-primary fs-5"></i>
+            <div>
+              <strong class="d-block text-dark">High Efficiency Architecture</strong>
+              <span class="text-secondary small">Engineered for extreme responsiveness and long battery longevity.</span>
+            </div>
+          </li>
+          <li class="list-group-item d-flex align-items-center gap-3 py-3">
+            <i class="bi bi-display text-primary fs-5"></i>
+            <div>
+              <strong class="d-block text-dark">Ultra-Vibrant Display</strong>
+              <span class="text-secondary small">True-to-life color accuracy and high peak brightness for all lighting conditions.</span>
+            </div>
+          </li>
+          <li class="list-group-item d-flex align-items-center gap-3 py-3">
+            <i class="bi bi-box-seam text-primary fs-5"></i>
+            <div>
+              <strong class="d-block text-dark">What's in the Box</strong>
+              <span class="text-secondary small"><%= product.name %>, USB-C Braided Fast Charge Cable, Documentation & Warranty Card.</span>
+            </div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="col-12 col-lg-5">
+        <h2 class="h4 fw-bold text-dark mb-3">Technical Specifications</h2>
+        <table class="specs-table shadow-sm">
+          <tbody>
+            <tr>
+              <th scope="row">Brand</th>
+              <td>Apple / Certified Flagship</td>
+            </tr>
+            <tr>
+              <th scope="row">Category</th>
+              <td><%= categoryName %></td>
+            </tr>
+            <tr>
+              <th scope="row">Model</th>
+              <td><%= product.name.split('(')[0].trim() %></td>
+            </tr>
+            <tr>
+              <th scope="row">Warranty</th>
+              <td>1 Year Limited Manufacturer Warranty</td>
+            </tr>
+            <tr>
+              <th scope="row">Connectivity</th>
+              <td>Wi-Fi 6E, Bluetooth 5.3, USB-C</td>
+            </tr>
+            <tr>
+              <th scope="row">Item Condition</th>
+              <td>100% Brand New in Sealed Retail Box</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </section>
+
+  <!-- Amazon-style Customer Reviews Section -->
+  <!-- <section class="mt-5 pt-4 border-top" id="reviews">
+    <div class="d-flex align-items-center justify-content-between mb-4">
+      <div>
+        <h2 class="h4 fw-bold text-dark mb-1">Customer Reviews & Ratings</h2>
+        <p class="text-secondary small mb-0">Verified customer feedback from real buyers.</p>
+      </div>
+      <a href="#productCartForm" class="btn btn-outline-primary btn-sm rounded-pill px-3">
+        Write a Review
+      </a>
+    </div> -->
+
+    <!-- <div class="row g-4 align-items-start">
+      <div class="col-12 col-md-4">
+        <div class="card border-0 bg-white p-4 rounded-4 shadow-sm text-center">
+          <div class="display-4 fw-bold text-dark mb-1">4.8</div>
+          <div class="stars-gold fs-5 mb-2">
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-fill"></i>
+            <i class="bi bi-star-half"></i>
+          </div> -->
+
+          <!-- <div class="text-secondary small mb-4">Based on 2,430 ratings worldwide</div>
+
+          <!-- Rating distribution bars -->
+          <!-- <div class="d-flex align-items-center gap-2 mb-2 small">
+            <span style="width: 45px;">5 Star</span>
+            <div class="progress flex-grow-1" style="height: 8px;">
+              <div class="progress-bar bg-warning" style="width: 82%;"></div>
+            </div>
+            <span class="text-secondary" style="width: 35px;">82%</span>
+          </div>
+          <div class="d-flex align-items-center gap-2 mb-2 small">
+            <span style="width: 45px;">4 Star</span>
+            <div class="progress flex-grow-1" style="height: 8px;">
+              <div class="progress-bar bg-warning" style="width: 12%;"></div>
+            </div>
+            <span class="text-secondary" style="width: 35px;">12%</span>
+          </div>
+          <div class="d-flex align-items-center gap-2 mb-2 small">
+            <span style="width: 45px;">3 Star</span>
+            <div class="progress flex-grow-1" style="height: 8px;">
+              <div class="progress-bar bg-warning" style="width: 4%;"></div>
+            </div>
+            <span class="text-secondary" style="width: 35px;">4%</span>
+          </div> -->
+          <!-- <div class="d-flex align-items-center gap-2 mb-2 small">
+            <span style="width: 45px;">2 Star</span>
+            <div class="progress flex-grow-1" style="height: 8px;">
+              <div class="progress-bar bg-warning" style="width: 1%;"></div>
+            </div>
+            <span class="text-secondary" style="width: 35px;">1%</span>
+          </div>
+          <div class="d-flex align-items-center gap-2 small">
+            <span style="width: 45px;">1 Star</span>
+            <div class="progress flex-grow-1" style="height: 8px;">
+              <div class="progress-bar bg-warning" style="width: 1%;"></div>
+            </div>
+            <span class="text-secondary" style="width: 35px;">1%</span>
+          </div>
+        </div> -->
+      </div>
+
+      <!-- Sample Verified Reviews -->
+      <!-- <div class="col-12 col-md-8">
+        <div class="d-grid gap-3">
+          <div class="card border-0 bg-white p-3 p-md-4 rounded-4 shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="rounded-circle bg-primary-subtle text-primary fw-bold d-inline-flex align-items-center justify-content-center" style="width: 34px; height: 34px;">
+                  R
+                </span>
+                <div>
+                  <div class="fw-bold small text-dark">Rahul S.</div>
+                  <div class="stars-gold small">
+                    <i class="bi bi-star-fill"></i>
+                    <i class="bi bi-star-fill"></i>
+                    <i class="bi bi-star-fill"></i>
+                    <i class="bi bi-star-fill"></i>
+                    <i class="bi bi-star-fill"></i>
+                  </div>
+                </div>
+              </div>
+              <span class="badge bg-success-subtle text-success small"><i class="bi bi-patch-check-fill me-1"></i>Verified Purchase</span>
+            </div> -->
+            <!-- <h4 class="h6 fw-bold mb-1">Unmatched performance and flawless build quality!</h4>
+            <p class="text-secondary small mb-0">
+              The product arrived ahead of time in mint sealed condition. The screen is breathtaking, battery life easily handles full workday usage, and the titanium chassis feels unbelievably lightweight. Worth every rupee!
+            </p>
+          </div>
+
+          <div class="card border-0 bg-white p-3 p-md-4 rounded-4 shadow-sm">
+            <div class="d-flex align-items-center justify-content-between mb-2">
+              <div class="d-flex align-items-center gap-2">
+                <span class="rounded-circle bg-info-subtle text-info fw-bold d-inline-flex align-items-center justify-content-center" style="width: 34px; height: 34px;">
+                  P
+                </span> -->
+                <!-- <div>
+                  <div class="fw-bold small text-dark">Priya M.</div>
+                  <div class="stars-gold small">
+                    <i class="bi bi-star-fill"></i>
+                    <i class="bi bi-star-fill"></i>
+                    <i class="bi bi-star-fill"></i>
+                    <i class="bi bi-star-fill"></i>
+                    <i class="bi bi-star-fill"></i>
+                  </div>
+                </div>
+              </div>
+              <span class="badge bg-success-subtle text-success small"><i class="bi bi-patch-check-fill me-1"></i>Verified Purchase</span>
+            </div> -->
+            <!-- <h4 class="h6 fw-bold mb-1">Smooth delivery and 100% authentic Apple device</h4>
+            <p class="text-secondary small mb-0">
+              Registered seamlessly on Apple official warranty portal right out of the box. Fast charging works wonderfully and the packaging was completely tamper-proof. Highly recommended!
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section> -->
+
+  <!-- Related products section -->
+  <% if (relatedProducts.length) { %>
+    <section class="mt-5 pt-4 border-top" aria-labelledby="relatedProductsTitle">
+      <div class="d-flex align-items-center justify-content-between mb-4">
+        <div>
+          <h2 class="h4 fw-bold mb-1" id="relatedProductsTitle">Customers Also Viewed</h2>
+          <p class="text-secondary small mb-0">Similar top-rated items in <%= categoryName %>.</p>
+        </div>
+        <a href="/?category=<%= product.category ? encodeURIComponent(String(product.category._id || '')) : '' %>" class="btn btn-outline-primary btn-sm rounded-pill">
+          View all in category
+        </a>
+      </div>
+
+      <div class="row g-3 g-md-4">
+        <% relatedProducts.slice(0, 4).forEach(function (relatedProduct, idx) {
+          var relatedId = String(relatedProduct._id);
+          var relatedImage = getImgUrl(relatedProduct.images && relatedProduct.images.length > 0 ? relatedProduct.images[0] : null);
+          var relDiscount = 15;
+          var relOriginal = Math.round(relatedProduct.price * (1 + relDiscount / 100));
+        %>
+          <div class="col-6 col-md-4 col-xl-3">
+            <article class="product-card h-100">
+              <div class="product-media-wrapper">
+                <span class="badge-discount">-<%= relDiscount %>% OFF</span>
+                <a href="/products/<%= encodeURIComponent(relatedId) %>" class="d-block w-100 h-100 text-center" aria-label="View <%= relatedProduct.name %> details">
+                  <img class="product-card-img" src="<%= relatedImage %>" alt="<%= relatedProduct.name %>" loading="lazy">
+                </a>
+              </div>
+              <div class="card-product-content">
+                <div class="product-category-name"><%= categoryName %></div>
+                <a href="/products/<%= encodeURIComponent(relatedId) %>" class="product-title-text" title="<%= relatedProduct.name %>">
+                  <%= relatedProduct.name %>
+                </a>
+                <div class="rating-stars-wrap">
+                  <span class="stars-gold"><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i><i class="bi bi-star-fill"></i></span>
+                  <span class="fw-bold small text-dark ms-1">4.9</span>
+                </div>
+                <div class="product-pricing-box">
+                  <span class="current-price">&#8377;<%= Number(relatedProduct.price).toLocaleString('en-IN') %></span>
+                  <span class="original-mrp">&#8377;<%= Number(relOriginal).toLocaleString('en-IN') %></span>
+                </div>
+                <div class="prime-tag">
+                  <i class="bi bi-lightning-charge-fill text-warning"></i>
+                  <span>FREE Delivery</span>
+                </div>
+                <div class="product-actions-row">
+                  <% if (relatedProduct.stock === 0) { %>
+                    <button class="btn btn-secondary btn-sm" type="button" disabled>Out of stock</button>
+                  <% } else { %>
+                    <form action="/cart/add" method="POST" class="m-0">
+                      <input type="hidden" name="productId" value="<%= relatedId %>">
+                      <input type="hidden" name="quantity" value="1">
+                      <button class="btn btn-add-cart w-100" type="submit">
+                        <i class="bi bi-cart-plus"></i> Add
+                      </button>
+                    </form>
+                  <% } %>
+                  <a class="btn-view-quick" href="/products/<%= encodeURIComponent(relatedId) %>" title="View details">
+                    <i class="bi bi-arrow-right"></i>
+                  </a>
+                </div>
+              </div>
+            </article>
+          </div>
+        <% }) %>
+      </div>
+    </section>
+  <% } %>
+
+</section>
+
+<script>
+  document.querySelectorAll('.detail-thumb-btn').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var mainImage = document.getElementById('productMainImage');
+      var imageSrc = button.dataset.imageSrc;
+
+      if (!mainImage || !imageSrc) return;
+
+      mainImage.src = imageSrc;
+      mainImage.alt = button.dataset.imageAlt || mainImage.alt;
+
+      document.querySelectorAll('.detail-thumb-btn').forEach(function (thumbnail) {
+        var isActive = thumbnail === button;
+        thumbnail.classList.toggle('active', isActive);
+
+        if (isActive) {
+          thumbnail.setAttribute('aria-current', 'true');
+        } else {
+          thumbnail.removeAttribute('aria-current');
+        }
+      });
+    });
+  });
+
+  // Confirm handler for remove forms
+  document.querySelectorAll('form[data-confirm]').forEach(function (form) {
+    form.addEventListener('submit', function (event) {
+      if (!window.confirm(form.dataset.confirm)) {
+        event.preventDefault();
+      }
+    });
+  });
+</script>
+
+<%- include('../partials/footer') %>

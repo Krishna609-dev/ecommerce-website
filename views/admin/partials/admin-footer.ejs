@@ -1,0 +1,70 @@
+    </main>
+  </div>
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/js/main.js"></script>
+  <div class="modal fade" id="adminConfirmModal" tabindex="-1" aria-labelledby="adminConfirmTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h2 class="modal-title fs-5" id="adminConfirmTitle">Please confirm</h2>
+          <button class="btn-close" type="button" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body" id="adminConfirmMessage">Are you sure you want to continue?</div>
+        <div class="modal-footer">
+          <button class="btn btn-outline-danger" type="button" data-bs-dismiss="modal">Cancel</button>
+          <button class="btn btn-danger" type="button" id="adminConfirmSubmit">Continue</button>
+        </div>
+      </div>
+    </div>
+  </div>
+  <script>
+    (function () {
+      var modalElement = document.getElementById('adminConfirmModal');
+      var confirmModal = bootstrap.Modal.getOrCreateInstance(modalElement);
+      var confirmMessage = document.getElementById('adminConfirmMessage');
+      var confirmButton = document.getElementById('adminConfirmSubmit');
+      var pendingForm = null;
+      var confirmedForms = new WeakSet();
+
+      document.addEventListener('submit', function (event) {
+        var form = event.target;
+        if (!(form instanceof HTMLFormElement) || !form.hasAttribute('data-confirm')) {
+          return;
+        }
+
+        if (confirmedForms.has(form)) {
+          confirmedForms.delete(form);
+          return;
+        }
+
+        event.preventDefault();
+        pendingForm = form;
+        confirmMessage.textContent = form.dataset.confirm || 'Are you sure you want to continue?';
+        confirmModal.show();
+      });
+
+      confirmButton.addEventListener('click', function () {
+        if (!pendingForm) {
+          return;
+        }
+
+        var form = pendingForm;
+        var submitter = form.querySelector('button[type="submit"], input[type="submit"]');
+        pendingForm = null;
+        confirmedForms.add(form);
+        confirmModal.hide();
+
+        if (submitter) {
+          form.requestSubmit(submitter);
+        } else {
+          form.requestSubmit();
+        }
+      });
+
+      modalElement.addEventListener('hidden.bs.modal', function () {
+        pendingForm = null;
+      });
+    })();
+  </script>
+</body>
+</html>

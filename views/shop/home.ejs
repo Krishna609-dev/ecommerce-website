@@ -1,0 +1,817 @@
+
+<%- include('../partials/header', { title: 'ApexTech Store - Online Shopping' }) %>
+<%- include('../partials/flash') %>
+
+<div id="wishlist-message-container" class="container pt-3"
+     aria-live="polite" aria-atomic="true"></div>
+
+<%
+  // Safely handle controller data
+  var safeCategories = Array.isArray(categories) ? categories : [];
+  var safeProducts = Array.isArray(products) ? products : [];
+  var safeQuery = query || {};
+
+  // Featured products for homepage carousel
+  var safeFeaturedProducts =
+    (typeof featuredProducts !== 'undefined' && Array.isArray(featuredProducts))
+      ? featuredProducts
+      : [];
+
+  // If no featured products exist, use the first 5 catalog products
+  var carouselProducts = safeFeaturedProducts.length > 0
+    ? safeFeaturedProducts
+    : safeProducts.slice(0, 5);
+
+  var searchTerm = typeof safeQuery.search === 'string'
+    ? safeQuery.search.trim()
+    : '';
+
+  var categoryId = safeQuery.category
+    ? String(safeQuery.category)
+    : '';
+
+  var selectedCategory = safeCategories.find(function(category) {
+    return String(category._id) === categoryId;
+  });
+
+  var hasActiveFilters = Boolean(searchTerm || categoryId);
+
+  var wishlistProductIds =
+    (typeof wishlistIds !== 'undefined' && Array.isArray(wishlistIds))
+      ? wishlistIds.map(function(id) { return String(id); })
+      : [];
+
+  // Safely generate product image URL
+  function getProductImageUrl(product) {
+    if (product.images && product.images.length > 0) {
+      var img = product.images[0];
+
+      if (typeof img !== 'string') {
+        img = img && (img.url || img.filename || img.path);
+      }
+
+      if (typeof img === 'string' && img.trim()) {
+        img = img.trim();
+
+        if (/^https?:\/\//i.test(img) || img.startsWith('/')) {
+          return img;
+        }
+
+        return '/uploads/' + encodeURIComponent(img);
+      }
+    }
+
+    return '/uploads/iphone-16-pro-front.jpg';
+  }
+
+  // Preserve search keyword in category links
+  var searchParam = searchTerm
+    ? '&search=' + encodeURIComponent(searchTerm)
+    : '';
+
+  var allProductsUrl = searchTerm
+    ? '/?search=' + encodeURIComponent(searchTerm) + '#products'
+    : '/#products';
+%>
+
+<div class="container pt-3 pt-md-4">
+
+  <!-- Main Product Carousel -->
+  <% if (!hasActiveFilters) { %>
+
+    <% if (carouselProducts.length > 0) { %>
+
+      <section class="main-carousel-section mb-4 mb-lg-5"
+               aria-label="Featured products">
+
+        <div id="mainProductCarousel"
+             class="carousel slide"
+             data-bs-ride="carousel"
+             data-bs-interval="5000"
+             data-bs-pause="hover">
+
+          <!-- Carousel Indicators -->
+          <% if (carouselProducts.length > 1) { %>
+
+            <div class="carousel-indicators">
+
+              <% carouselProducts.forEach(function(product, index) { %>
+
+                <button
+                  type="button"
+                  data-bs-target="#mainProductCarousel"
+                  data-bs-slide-to="<%= index %>"
+                  class="<%= index === 0 ? 'active' : '' %>"
+                  aria-current="<%= index === 0 ? 'true' : 'false' %>"
+                  aria-label="Slide <%= index + 1 %>">
+                </button>
+
+              <% }) %>
+
+            </div>
+
+          <% } %>
+
+          <!-- Carousel Slides -->
+          <div class="carousel-inner">
+
+            <% carouselProducts.forEach(function(product, index) {
+
+              var heroImage = getProductImageUrl(product);
+
+              var heroPrice = Number(product.price);
+
+              var heroCategory = product.category && product.category.name
+                ? product.category.name
+                : 'Featured Product';
+
+              var heroDescription = product.description
+                ? product.description
+                : 'Discover this product from our latest collection.';
+
+            %>
+
+              <div class="carousel-item <%= index === 0 ? 'active' : '' %>">
+
+                <div class="main-carousel-content">
+
+                  <!-- Product Details -->
+                  <div class="main-carousel-text">
+
+                    <span class="carousel-badge">
+                      <i class="bi bi-stars me-1"></i>
+                      FEATURED COLLECTION
+                    </span>
+
+                    <div class="carousel-category">
+                      <%= heroCategory %>
+                    </div>
+
+                    <h1 class="carousel-title">
+                      <%= product.name %>
+                    </h1>
+
+                    <p class="carousel-description">
+                      <%= heroDescription %>
+                    </p>
+
+                    <% if (Number.isFinite(heroPrice) && heroPrice >= 0) { %>
+
+                      <div class="carousel-price">
+                        ₹<%= heroPrice.toLocaleString('en-IN') %>
+                      </div>
+
+                    <% } %>
+
+                    <div class="d-flex flex-wrap gap-3 mt-4">
+
+                      <a
+                        href="/products/<%= encodeURIComponent(String(product._id)) %>"
+                        class="btn btn-light btn-lg rounded-pill px-4 fw-semibold">
+
+                        View Product
+                        <i class="bi bi-arrow-right ms-2"></i>
+
+                      </a>
+
+                      <a
+                        href="#products"
+                        class="btn btn-outline-light btn-lg rounded-pill px-4">
+
+                        Explore Store
+
+                      </a>
+
+                    </div>
+
+                  </div>
+
+                  <!-- Product Image -->
+                  <div class="main-carousel-image">
+
+                    <a
+                      href="/products/<%= encodeURIComponent(String(product._id)) %>"
+                      aria-label="View <%= product.name %>">
+
+                      <img
+                        src="<%= heroImage %>"
+                        alt="<%= product.name %>"
+                        class="img-fluid"
+                        loading="<%= index === 0 ? 'eager' : 'lazy' %>">
+
+                    </a>
+
+                  </div>
+
+                </div>
+
+              </div>
+
+            <% }) %>
+
+          </div>
+
+          <!-- Previous and Next Controls -->
+          <% if (carouselProducts.length > 1) { %>
+
+            <button
+              class="carousel-control-prev"
+              type="button"
+              data-bs-target="#mainProductCarousel"
+              data-bs-slide="prev"
+              aria-label="Previous product">
+
+              <span class="carousel-control-prev-icon"
+                    aria-hidden="true"></span>
+
+            </button>
+
+            <button
+              class="carousel-control-next"
+              type="button"
+              data-bs-target="#mainProductCarousel"
+              data-bs-slide="next"
+              aria-label="Next product">
+
+              <span class="carousel-control-next-icon"
+                    aria-hidden="true"></span>
+
+            </button>
+
+          <% } %>
+
+        </div>
+
+      </section>
+
+    <% } %>
+
+    <!-- Store Benefits -->
+    <section class="trust-bar mb-4 mb-lg-5"
+             aria-label="Store benefits">
+
+      <div class="row g-3 g-md-4">
+
+        <div class="col-6 col-lg-3">
+          <div class="trust-item">
+
+            <div class="trust-icon-box">
+              <i class="bi bi-truck"></i>
+            </div>
+
+            <div>
+              <h2 class="trust-title">Express Delivery</h2>
+              <p class="trust-desc">Convenient product delivery</p>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="col-6 col-lg-3">
+          <div class="trust-item">
+
+            <div class="trust-icon-box">
+              <i class="bi bi-shield-check"></i>
+            </div>
+
+            <div>
+              <h2 class="trust-title">Brand Warranty</h2>
+              <p class="trust-desc">Warranty as per product policy</p>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="col-6 col-lg-3">
+          <div class="trust-item">
+
+            <div class="trust-icon-box">
+              <i class="bi bi-arrow-repeat"></i>
+            </div>
+
+            <div>
+              <h2 class="trust-title">Easy Support</h2>
+              <p class="trust-desc">Customer assistance</p>
+            </div>
+
+          </div>
+        </div>
+
+        <div class="col-6 col-lg-3">
+          <div class="trust-item">
+
+            <div class="trust-icon-box">
+              <i class="bi bi-lock-fill"></i>
+            </div>
+
+            <div>
+              <h2 class="trust-title">Secure Payments</h2>
+              <p class="trust-desc">Payments powered by Razorpay</p>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+  <% } %>
+
+  <!-- Product Filters -->
+  <section class="mb-4" aria-label="Product filters">
+
+    <div class="d-flex flex-wrap align-items-center justify-content-between gap-3 mb-3">
+
+      <div>
+
+        <h2 class="h4 fw-bold text-dark mb-1">
+
+          <% if (selectedCategory) { %>
+
+            <%= selectedCategory.name %>
+
+          <% } else if (searchTerm) { %>
+
+            Search Results for "<%= searchTerm %>"
+
+          <% } else { %>
+
+            Featured Products
+
+          <% } %>
+
+        </h2>
+
+        <p class="text-secondary small mb-0">
+          Explore products across multiple categories at ApexTech Store.
+        </p>
+
+      </div>
+
+      <!-- Category Pills -->
+      <div class="d-flex flex-wrap gap-2">
+
+        <a class="btn btn-sm rounded-pill
+          <%= !categoryId ? 'btn-primary' : 'btn-outline-secondary' %>"
+           href="<%= allProductsUrl %>">
+          All Products
+        </a>
+
+        <% safeCategories.forEach(function(category) { %>
+
+          <a
+            class="btn btn-sm rounded-pill
+              <%= categoryId === String(category._id)
+                ? 'btn-primary'
+                : 'btn-outline-secondary' %>"
+
+            href="/?category=<%= encodeURIComponent(String(category._id)) %><%= searchParam %>#products"
+          >
+            <%= category.name %>
+          </a>
+
+        <% }) %>
+
+      </div>
+
+    </div>
+
+    <!-- Active Filters -->
+    <% if (hasActiveFilters) { %>
+
+      <div class="alert alert-light border py-2 px-3
+                  d-flex align-items-center justify-content-between
+                  rounded-3 mb-4">
+
+        <div class="small">
+
+          <span class="text-secondary">Filtering by:</span>
+
+          <% if (searchTerm) { %>
+            <span class="badge bg-primary-subtle text-primary ms-1">
+              Keyword: <%= searchTerm %>
+            </span>
+          <% } %>
+
+          <% if (selectedCategory) { %>
+            <span class="badge bg-secondary-subtle text-dark ms-1">
+              Category: <%= selectedCategory.name %>
+            </span>
+          <% } %>
+
+        </div>
+
+        <a class="btn btn-link btn-sm text-danger
+                  text-decoration-none fw-semibold"
+           href="/">
+          <i class="bi bi-x-circle me-1"></i>
+          Clear all filters
+        </a>
+
+      </div>
+
+    <% } %>
+
+  </section>
+
+  <!-- Product Catalog -->
+  <section id="products" aria-label="Products catalog">
+
+    <% if (safeProducts.length > 0) { %>
+
+      <div class="row g-3 g-md-4">
+
+        <% safeProducts.forEach(function(product, index) {
+
+          var productId = String(product._id);
+
+          var isWishlisted = wishlistProductIds.includes(productId);
+
+          var primaryImage = getProductImageUrl(product);
+
+          var stock = Number(product.stock);
+          var price = Number(product.price);
+
+          var isOutOfStock = !Number.isFinite(stock) || stock <= 0;
+
+          var validPrice = Number.isFinite(price) && price >= 0;
+
+          // Show discount only when actual originalPrice exists
+          var originalPrice = Number(product.originalPrice);
+
+          var hasDiscount =
+            validPrice &&
+            Number.isFinite(originalPrice) &&
+            originalPrice > price;
+
+          var discountPercent = hasDiscount
+            ? Math.round(((originalPrice - price) / originalPrice) * 100)
+            : 0;
+
+          // Use real ratings only when available
+          var rating = Number(product.rating);
+
+          var reviewCount = Number(product.reviewCount);
+
+          var hasRating =
+            Number.isFinite(rating) &&
+            rating >= 0 &&
+            rating <= 5 &&
+            Number.isFinite(reviewCount) &&
+            reviewCount >= 0;
+
+        %>
+
+          <div class="col-6 col-md-4 col-xl-3">
+
+            <article class="product-card h-100">
+
+              <!-- Product Image -->
+              <div class="product-media-wrapper">
+
+                <% if (index === 0) { %>
+
+                  <span class="badge-bestseller">
+                    <i class="bi bi-fire me-1"></i>
+                    Featured
+                  </span>
+
+                <% } else if (hasDiscount) { %>
+
+                  <span class="badge-discount">
+                    -<%= discountPercent %>% OFF
+                  </span>
+
+                <% } %>
+
+                <!-- Wishlist Button -->
+                <button
+                  type="button"
+                  class="wishlist-float-btn wishlist-btn"
+
+                  data-product-id="<%= productId %>"
+                  data-wishlisted="<%= isWishlisted %>"
+
+                  aria-label="<%= isWishlisted
+                    ? 'Remove from wishlist'
+                    : 'Add to wishlist' %>"
+
+                  aria-pressed="<%= isWishlisted ? 'true' : 'false' %>"
+                >
+
+                  <i class="bi
+                    <%= isWishlisted
+                      ? 'bi-heart-fill text-danger'
+                      : 'bi-heart' %>
+                    wishlist-icon"
+                    aria-hidden="true"></i>
+
+                </button>
+
+                <!-- Product Image Link -->
+                <a
+                  href="/products/<%= encodeURIComponent(productId) %>"
+                  class="d-block w-100 h-100 text-center"
+                  aria-label="View <%= product.name %> details"
+                >
+
+                  <img
+                    class="product-card-img"
+                    src="<%= primaryImage %>"
+                    alt="<%= product.name %>"
+                    loading="lazy"
+                  >
+
+                </a>
+
+              </div>
+
+              <!-- Product Information -->
+              <div class="card-product-content">
+
+                <div class="product-category-name">
+                  <%= product.category
+                    ? product.category.name
+                    : 'Other Products' %>
+                </div>
+
+                <!-- Product Name -->
+                <a
+                  href="/products/<%= encodeURIComponent(productId) %>"
+                  class="product-title-text"
+                  title="<%= product.name %>"
+                >
+                  <%= product.name %>
+                </a>
+
+                <!-- Actual Product Rating -->
+                <% if (hasRating) { %>
+
+                  <div class="rating-stars-wrap">
+
+                    <span class="stars-gold">
+
+                      <% for (var star = 1; star <= 5; star++) { %>
+
+                        <% if (rating >= star) { %>
+
+                          <i class="bi bi-star-fill"></i>
+
+                        <% } else if (rating >= star - 0.5) { %>
+
+                          <i class="bi bi-star-half"></i>
+
+                        <% } else { %>
+
+                          <i class="bi bi-star"></i>
+
+                        <% } %>
+
+                      <% } %>
+
+                    </span>
+
+                    <span class="fw-bold small text-dark ms-1">
+                      <%= rating.toFixed(1) %>
+                    </span>
+
+                    <span class="rating-count">
+                      (<%= reviewCount.toLocaleString('en-IN') %>)
+                    </span>
+
+                  </div>
+
+                <% } %>
+
+                <!-- Product Price -->
+                <div class="product-pricing-box">
+
+                  <% if (validPrice) { %>
+
+                    <span class="current-price">
+                      ₹<%= price.toLocaleString('en-IN') %>
+                    </span>
+
+                    <% if (hasDiscount) { %>
+
+                      <span class="original-mrp">
+                        ₹<%= originalPrice.toLocaleString('en-IN') %>
+                      </span>
+
+                      <span class="savings-label">
+                        Save ₹<%= (originalPrice - price).toLocaleString('en-IN') %>
+                      </span>
+
+                    <% } %>
+
+                  <% } else { %>
+
+                    <span class="text-danger small">
+                      Price unavailable
+                    </span>
+
+                  <% } %>
+
+                </div>
+
+                <!-- Delivery Information -->
+                <div class="prime-tag">
+                  <i class="bi bi-truck text-warning"></i>
+                  <span>Delivery details at checkout</span>
+                </div>
+
+                <!-- Stock Availability -->
+                <% if (isOutOfStock) { %>
+
+                  <div class="stock-tag-pill stock-out">
+                    <span class="stock-dot"></span>
+                    Out of Stock
+                  </div>
+
+                <% } else if (stock <= 5) { %>
+
+                  <div class="stock-tag-pill stock-low pulse-badge">
+                    <span class="stock-dot"></span>
+                    Only <%= stock %> left in stock!
+                  </div>
+
+                <% } else { %>
+
+                  <div class="stock-tag-pill stock-in">
+                    <span class="stock-dot"></span>
+                    In Stock
+                  </div>
+
+                <% } %>
+
+                <!-- Product Actions -->
+                <div class="product-actions-row">
+
+                  <% if (isOutOfStock || !validPrice) { %>
+
+                    <button
+                      class="btn btn-secondary btn-sm"
+                      type="button"
+                      disabled
+                    >
+                      <%= isOutOfStock ? 'Out of Stock' : 'Unavailable' %>
+                    </button>
+
+                  <% } else { %>
+
+                    <form action="/cart/add" method="POST" class="m-0">
+
+                      <input
+                        type="hidden"
+                        name="productId"
+                        value="<%= productId %>"
+                      >
+
+                      <input
+                        type="hidden"
+                        name="quantity"
+                        value="1"
+                      >
+
+                      <button
+                        class="btn btn-add-cart w-100"
+                        type="submit"
+                      >
+                        <i class="bi bi-cart-plus"></i>
+                        Add
+                      </button>
+
+                    </form>
+
+                  <% } %>
+
+                  <a
+                    class="btn-view-quick"
+                    href="/products/<%= encodeURIComponent(productId) %>"
+                    aria-label="Details of <%= product.name %>"
+                    title="View details"
+                  >
+                    <i class="bi bi-arrow-right"></i>
+                  </a>
+
+                </div>
+
+              </div>
+
+            </article>
+
+          </div>
+
+        <% }) %>
+
+      </div>
+
+    <% } else { %>
+
+      <!-- No Products Found -->
+      <div class="text-center bg-white rounded-4 shadow-sm p-5 my-4">
+
+        <div class="mb-3 text-secondary display-4">
+          <i class="bi bi-search"></i>
+        </div>
+
+        <h2 class="h4 fw-bold">
+          No products found
+        </h2>
+
+        <p class="text-secondary mb-4">
+          Try checking your spelling or clearing filters
+          to view all available products.
+        </p>
+
+        <a
+          class="btn btn-primary rounded-pill px-4"
+          href="/"
+        >
+          Clear Filters & Browse All
+        </a>
+
+      </div>
+
+    <% } %>
+
+  </section>
+
+  <!-- General Store Promotional Banner -->
+  <% if (!hasActiveFilters && safeProducts.length > 0) { %>
+
+    <section class="mt-5 mb-4">
+
+      <div
+        class="card border-0 rounded-4 overflow-hidden shadow-sm"
+        style="background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #ffffff;"
+      >
+
+        <div class="card-body p-4 p-md-5">
+
+          <div class="row align-items-center g-4">
+
+            <div class="col-12 col-md-8">
+
+              <span class="badge bg-primary text-white mb-2 px-3 py-1">
+                APEXTECH COLLECTION
+              </span>
+
+              <h2 class="h2 fw-bold text-white mb-2">
+                Everything You Need, All in One Place
+              </h2>
+
+              <p class="text-secondary mb-3 pe-lg-4">
+                Explore our wide range of products across different
+                categories. Find quality products at great prices.
+              </p>
+
+              <div class="d-flex flex-wrap gap-3">
+
+                <a
+                  class="btn btn-outline-light rounded-pill px-4"
+                  href="/#products"
+                >
+                  Explore Products
+                </a>
+
+              </div>
+
+            </div>
+
+            <div class="col-12 col-md-4 text-center">
+
+              <div class="p-3">
+
+                <i class="bi bi-bag-check text-primary display-3 mb-2 d-block"></i>
+
+                <div class="fw-bold fs-5 text-white">
+                  Shop. Choose. Enjoy.
+                </div>
+
+                <div class="text-secondary small">
+                  Discover products for every need
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </div>
+
+      </div>
+
+    </section>
+
+  <% } %>
+
+  <!-- Pagination -->
+  <div class="mt-4 mt-md-5">
+    <%- include('../partials/pagination') %>
+  </div>
+
+</div>
+
+<%- include('../partials/footer') %>

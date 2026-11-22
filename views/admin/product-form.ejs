@@ -1,0 +1,201 @@
+<%
+  var isEditing = Boolean(product);
+  var pageTitle = isEditing ? 'Edit product' : 'Add product';
+  var productCategoryId = product && product.category
+    ? String(typeof product.category === 'object' ? product.category._id : product.category)
+    : '';
+  var productImages = product && product.images ? product.images : [];
+%>
+<%- include('partials/admin-header', { title: pageTitle, activePage: 'products' }) %>
+
+<div class="admin-page-header">
+  <div>
+    <h2 class="h3 fw-bold"><%= pageTitle %></h2>
+    <p class="text-secondary mb-0"><%= isEditing ? 'Update the product details and images.' : 'Add a product to your store catalog.' %></p>
+  </div>
+</div>
+
+<% if (errors.length) { %>
+  <div class="alert alert-danger" role="alert" aria-labelledby="productErrorsTitle">
+    <h3 class="h6 alert-heading" id="productErrorsTitle">Please review the following errors:</h3>
+    <ul class="mb-0">
+      <% errors.forEach(function(item) { %>
+        <li><%= item.msg %></li>
+      <% }) %>
+    </ul>
+  </div>
+<% } %>
+
+<section class="card">
+  <div class="card-body p-3 p-md-4">
+    <form
+      action="<%= isEditing ? '/admin/products/' + encodeURIComponent(String(product._id)) + '?_method=PUT' : '/admin/products' %>"
+      method="POST"
+      enctype="multipart/form-data"
+      id="productForm">
+      <div class="row g-3">
+        <div class="col-12">
+          <label class="form-label" for="productName">Name</label>
+          <input class="form-control" id="productName" name="name" type="text" value="<%= product ? product.name : '' %>" required>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label" for="productDescription">Description</label>
+          <textarea class="form-control" id="productDescription" name="description" rows="5" required><%= product ? product.description : '' %></textarea>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="productPrice">Price</label>
+          <div class="input-group">
+            <span class="input-group-text">&#8377;</span>
+            <input class="form-control" id="productPrice" name="price" type="number" min="0.01" step="0.01" value="<%= product ? product.price : '' %>" required>
+          </div>
+        </div>
+
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="productStock">Stock</label>
+          <input class="form-control" id="productStock" name="stock" type="number" min="0" step="1" value="<%= product ? product.stock : 0 %>" required>
+        </div>
+
+        <div class="col-12">
+          <label class="form-label" for="productCategory">Category</label>
+          <select class="form-select" id="productCategory" name="category" required>
+            <option value="">Choose a category</option>
+            <% categories.forEach(function(category) { %>
+              <option value="<%= String(category._id) %>" <%= productCategoryId === String(category._id) ? 'selected' : '' %>><%= category.name %></option>
+            <% }) %>
+          </select>
+        </div>
+
+
+        // insert carousel checkbox
+
+        
+<div class="col-12">
+  <div class="form-check">
+    <input
+      class="form-check-input"
+      type="checkbox"
+      id="isFeatured"
+      name="isFeatured"
+      <%= product && product.isFeatured ? 'checked' : '' %>
+    >
+
+    <label class="form-check-label fw-semibold" for="isFeatured">
+      Show in homepage carousel
+    </label>
+  </div>
+
+  <div class="form-text">
+    Select this option to display this product in the homepage banner carousel.
+  </div>
+</div>
+
+
+        <% if (isEditing && productImages.length) { %>
+          <div class="col-12">
+            <p class="form-label mb-2">Current images</p>
+            <div class="d-flex flex-wrap gap-3">
+              <% productImages.forEach(function(image, index) { %>
+                <img
+                  src="/uploads/<%= encodeURIComponent(image) %>"
+                  alt="<%= product.name %> image <%= index + 1 %>"
+                  class="rounded border object-fit-cover"
+                  width="112"
+                  height="84">
+              <% }) %>
+            </div>
+            <p class="form-text">Uploading new images replaces the current images.</p>
+          </div>
+        <% } %>
+
+        <div class="col-12">
+          <label class="form-label" for="productImages">Product images</label>
+          <input
+            class="form-control"
+            id="productImages"
+            name="images"
+            type="file"
+            accept="image/*"
+            multiple
+            aria-describedby="imageHelp imageError">
+          <div class="form-text" id="imageHelp">Select up to 3 images, each no larger than 2 MB.</div>
+          <div class="small text-danger mt-1" id="imageError" role="alert" aria-live="polite"></div>
+          <div class="d-flex flex-wrap gap-3 mt-3" id="imagePreview" aria-label="Selected image previews"></div>
+        </div>
+      </div>
+
+      <div class="d-flex flex-column flex-sm-row justify-content-end gap-2 mt-4">
+        <a class="btn btn-outline-danger" href="/admin/products">Cancel</a>
+        <button class="btn btn-primary" type="submit"><%= isEditing ? 'Save changes' : 'Save product' %></button>
+      </div>
+    </form>
+  </div>
+</section>
+
+<script>
+  (function () {
+    var imageInput = document.getElementById('productImages');
+    var preview = document.getElementById('imagePreview');
+    var errorMessage = document.getElementById('imageError');
+    var form = document.getElementById('productForm');
+    var previewUrls = [];
+
+    function clearPreview() {
+      previewUrls.forEach(function (url) {
+        URL.revokeObjectURL(url);
+      });
+      previewUrls = [];
+      preview.replaceChildren();
+    }
+
+    function showImageError(message) {
+      errorMessage.textContent = message;
+      imageInput.setCustomValidity(message);
+    }
+
+    imageInput.addEventListener('change', function () {
+      clearPreview();
+      showImageError('');
+
+      var files = Array.from(imageInput.files);
+      if (files.length > 3) {
+        imageInput.value = '';
+        showImageError('Please select no more than 3 images.');
+        return;
+      }
+
+      var oversizedFile = files.find(function (file) {
+        return file.size > 2 * 1024 * 1024;
+      });
+
+      if (oversizedFile) {
+        imageInput.value = '';
+        showImageError('Each image must be no larger than 2 MB.');
+        return;
+      }
+
+      files.forEach(function (file) {
+        var imageUrl = URL.createObjectURL(file);
+        previewUrls.push(imageUrl);
+
+        var image = document.createElement('img');
+        image.src = imageUrl;
+        image.alt = file.name;
+        image.className = 'rounded border object-fit-cover';
+        image.width = 112;
+        image.height = 84;
+        preview.appendChild(image);
+      });
+    });
+
+    form.addEventListener('submit', function (event) {
+      if (!imageInput.checkValidity()) {
+        event.preventDefault();
+        imageInput.reportValidity();
+      }
+    });
+  })();
+</script>
+
+<%- include('partials/admin-footer') %>

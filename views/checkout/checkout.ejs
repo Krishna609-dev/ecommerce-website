@@ -1,0 +1,385 @@
+<%- include('../partials/header', { title: 'Checkout' }) %>
+<%- include('../partials/flash') %>
+
+<style>
+  .checkout-choice {
+    cursor: pointer;
+    transition: border-color .15s ease, box-shadow .15s ease;
+  }
+
+  .checkout-choice:has(input:checked) {
+    border-color: #4338ca !important;
+    box-shadow: 0 0 0 .15rem rgba(67, 56, 202, .12);
+  }
+
+  @media (min-width: 992px) {
+    .checkout-summary {
+      position: sticky;
+      top: 6rem;
+    }
+  }
+</style>
+
+<section
+  class="container py-4 py-md-5"
+  data-razorpay-key="<%= typeof razorpayKeyId === 'undefined' ? '' : razorpayKeyId %>"
+>
+  <div class="mb-4">
+    <h1 class="h2 fw-bold mb-1">Checkout</h1>
+    <p class="text-secondary mb-0">Choose your delivery address and payment method.</p>
+  </div>
+
+  <div class="alert alert-danger d-none" id="checkoutError" role="alert" aria-live="assertive"></div>
+
+  <form action="/checkout" method="POST" id="checkoutForm">
+    <div class="row g-4 align-items-start">
+      <div class="col-12 col-lg-7">
+        <section class="card border-0 shadow-sm rounded-4 mb-4" aria-labelledby="deliveryTitle">
+          <div class="card-body p-3 p-md-4">
+            <h2 class="h4 fw-bold mb-4" id="deliveryTitle">Step 1: Delivery address</h2>
+
+            <% if (addresses && addresses.length) { %>
+              <div class="d-grid gap-3 mb-3">
+                <% addresses.forEach(function(address, index) { %>
+                  <label class="checkout-choice card border">
+                    <span class="card-body d-flex align-items-start gap-3">
+                      <input
+                        class="form-check-input mt-1"
+                        type="radio"
+                        name="addressId"
+                        value="<%= String(address._id) %>"
+                        <%= index === 0 ? 'checked' : '' %>
+                        required
+                      >
+                      <span>
+                        <strong class="d-block"><%= address.fullName %></strong>
+                        <span class="d-block text-secondary"><%= address.street %></span>
+                        <span class="d-block text-secondary"><%= address.city %>, <%= address.state %> <%= address.pincode %></span>
+                        <span class="d-block text-secondary"><%= address.phone %></span>
+                      </span>
+                    </span>
+                  </label>
+                <% }) %>
+              </div>
+            <% } %>
+
+            <label class="checkout-choice card border">
+              <span class="card-body d-flex align-items-center gap-3">
+                <input
+                  class="form-check-input"
+                  type="radio"
+                  name="addressId"
+                  value="new"
+                  <%= (!addresses || !addresses.length) ? 'checked' : '' %>
+                  required
+                >
+                <span class="fw-semibold">Use a new address</span>
+              </span>
+            </label>
+
+            <div class="row g-3 mt-2 <%= (addresses && addresses.length) ? 'd-none' : '' %>" id="newAddressFields">
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="newFullName">Full name</label>
+                <input class="form-control" id="newFullName" name="newAddress[fullName]" type="text" autocomplete="name" required>
+              </div>
+              <div class="col-12 col-md-6">
+                <label class="form-label" for="newPhone">Phone</label>
+                <input class="form-control" id="newPhone" name="newAddress[phone]" type="tel" inputmode="numeric" pattern="[0-9]{10}" minlength="10" maxlength="10" autocomplete="tel" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="newStreet">Street</label>
+                <textarea class="form-control" id="newStreet" name="newAddress[street]" rows="2" autocomplete="street-address" required></textarea>
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="form-label" for="newCity">City</label>
+                <input class="form-control" id="newCity" name="newAddress[city]" type="text" autocomplete="address-level2" required>
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="form-label" for="newState">State</label>
+                <input class="form-control" id="newState" name="newAddress[state]" type="text" autocomplete="address-level1" required>
+              </div>
+              <div class="col-12 col-md-4">
+                <label class="form-label" for="newPincode">Pincode</label>
+                <input class="form-control" id="newPincode" name="newAddress[pincode]" type="text" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" autocomplete="postal-code" required>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section class="card border-0 shadow-sm rounded-4" aria-labelledby="paymentTitle">
+          <div class="card-body p-3 p-md-4">
+            <h2 class="h4 fw-bold mb-4" id="paymentTitle">Step 2: Payment method</h2>
+            <div class="d-grid gap-3">
+              <label class="checkout-choice card border">
+                <span class="card-body d-flex align-items-center gap-3">
+                  <input class="form-check-input" type="radio" name="paymentMethod" value="COD" checked required>
+                  <span>
+                    <strong class="d-block">Cash on Delivery</strong>
+                    <span class="small text-secondary">Pay when your order arrives.</span>
+                  </span>
+                </span>
+              </label>
+              <label class="checkout-choice card border">
+                <span class="card-body d-flex align-items-center gap-3">
+                  <input class="form-check-input" type="radio" name="paymentMethod" value="ONLINE" required>
+                  <span>
+                    <strong class="d-block">Pay online (Razorpay)</strong>
+                    <span class="small text-secondary">Pay securely using Razorpay.</span>
+                  </span>
+                </span>
+              </label>
+            </div>
+          </div>
+        </section>
+      </div>
+
+      <aside class="col-12 col-lg-5" aria-labelledby="orderSummaryTitle">
+        <div class="card border-0 shadow-sm rounded-4 checkout-summary">
+          <div class="card-body p-3 p-md-4">
+            <h2 class="h4 fw-bold mb-4" id="orderSummaryTitle">Order summary</h2>
+
+            <div class="d-grid gap-3 mb-4">
+              <% items.forEach(function(item) { %>
+                <div class="d-flex justify-content-between align-items-start gap-3">
+                  <div class="d-flex gap-2">
+                    <% if (item.product.images && item.product.images.length) { %>
+                      <img
+                        src="/uploads/<%= encodeURIComponent(item.product.images[0]) %>"
+                        alt="<%= item.product.name %>"
+                        width="52"
+                        height="52"
+                        class="rounded object-fit-cover"
+                      >
+                    <% } else { %>
+                      <div class="bg-secondary-subtle rounded d-flex align-items-center justify-content-center text-secondary" role="img" aria-label="No image available" style="width: 52px; height: 52px;">
+                        <i class="bi bi-image" aria-hidden="true"></i>
+                      </div>
+                    <% } %>
+                    <div>
+                      <span class="d-block fw-semibold"><%= item.product.name %></span>
+                      <span class="small text-secondary">Qty: <%= item.quantity %></span>
+                    </div>
+                  </div>
+                  <span class="text-nowrap">&#8377;<%= Number(item.lineTotal).toFixed(2) %></span>
+                </div>
+              <% }) %>
+            </div>
+
+            <hr>
+            <div class="d-flex justify-content-between mb-3">
+              <span class="text-secondary">Subtotal</span>
+              <span>&#8377;<%= Number(subtotal).toFixed(2) %></span>
+            </div>
+            <% if (discount > 0) { %>
+              <div class="d-flex justify-content-between text-success mb-3">
+                <span>Discount<% if (couponCode) { %> (<%= couponCode %>)<% } %></span>
+                <span>- &#8377;<%= Number(discount).toFixed(2) %></span>
+              </div>
+            <% } %>
+            <hr>
+            <div class="d-flex justify-content-between fw-bold fs-5 mb-4">
+              <span>Total</span>
+              <span>&#8377;<%= Number(total).toFixed(2) %></span>
+            </div>
+
+            <button class="btn btn-primary btn-lg w-100" type="submit" id="placeOrderButton">
+              <span class="spinner-border spinner-border-sm me-2 d-none" id="placeOrderSpinner" aria-hidden="true"></span>
+              <span id="placeOrderButtonText">Place order</span>
+            </button>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </form>
+</section>
+
+<script>
+  (function () {
+    var checkoutForm = document.getElementById('checkoutForm');
+    var addressFields = document.getElementById('newAddressFields');
+    var addressChoiceInputs = document.querySelectorAll('input[name="addressId"]');
+    var errorAlert = document.getElementById('checkoutError');
+    var placeOrderButton = document.getElementById('placeOrderButton');
+    var placeOrderSpinner = document.getElementById('placeOrderSpinner');
+    var placeOrderButtonText = document.getElementById('placeOrderButtonText');
+    var isSubmitting = false;
+
+    function showError(message) {
+      errorAlert.textContent = message;
+      errorAlert.classList.remove('d-none');
+      errorAlert.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
+    function setSubmitting(submitting) {
+      placeOrderButton.disabled = submitting;
+      placeOrderSpinner.classList.toggle('d-none', !submitting);
+      placeOrderButtonText.textContent = submitting ? 'Processing...' : 'Place order';
+      isSubmitting = submitting;
+    }
+
+    function updateAddressFields() {
+      var selectedAddress = document.querySelector('input[name="addressId"]:checked');
+      var useNewAddress = selectedAddress && selectedAddress.value === 'new';
+
+      addressFields.classList.toggle('d-none', !useNewAddress);
+      addressFields.querySelectorAll('input, textarea').forEach(function (field) {
+        field.disabled = !useNewAddress;
+        field.required = Boolean(useNewAddress);
+      });
+    }
+
+    addressChoiceInputs.forEach(function (input) {
+      input.addEventListener('change', updateAddressFields);
+    });
+    updateAddressFields();
+
+    function loadRazorpay() {
+      if (window.Razorpay) {
+        return Promise.resolve();
+      }
+
+      return new Promise(function (resolve, reject) {
+        var script = document.createElement('script');
+        script.src = 'https://checkout.razorpay.com/v1/checkout.js';
+        script.onload = resolve;
+        script.onerror = function () {
+          reject(new Error('Unable to load Razorpay checkout.'));
+        };
+        document.head.appendChild(script);
+      });
+    }
+
+    async function reportPaymentFailure(orderId) {
+      try {
+        var response = await fetch('/payment/failed', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ orderId: orderId })
+        });
+
+        if (!response.ok) {
+          throw new Error('Unable to update the failed payment status.');
+        }
+
+        showError('Payment failed. Please try placing the order again.');
+      } catch (error) {
+        showError(error.message || 'Payment failed. Please check your orders.');
+      }
+
+      setSubmitting(false);
+    }
+
+    async function startOnlinePayment() {
+      var razorpayKey = document.querySelector('[data-razorpay-key]').dataset.razorpayKey;
+
+      try {
+        var response = await fetch('/checkout', {
+          method: 'POST',
+          body: new URLSearchParams(new FormData(checkoutForm)),
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8'
+          }
+        });
+
+        var responseBody = await response.text();
+        var orderData;
+
+        try {
+          orderData = responseBody ? JSON.parse(responseBody) : {};
+        } catch (error) {
+          throw new Error(response.ok
+            ? 'The server returned an invalid checkout response.'
+            : 'Checkout request failed (' + response.status + '). Please try again.');
+        }
+
+        if (!response.ok) {
+          throw new Error(orderData.message || 'Checkout request failed (' + response.status + '). Please try again.');
+        }
+        if (!orderData.orderId || !orderData.razorpayOrderId || !orderData.amount || !(orderData.keyId || razorpayKey)) {
+          throw new Error('The server returned incomplete payment details.');
+        }
+
+        await loadRazorpay();
+
+        var paymentFinished = false;
+        var razorpay = new window.Razorpay({
+          key: orderData.keyId || razorpayKey,
+          order_id: orderData.razorpayOrderId,
+          amount: orderData.amount,
+          currency: 'INR',
+          name: 'My E-commerce Store',
+          description: 'Online Order Payment',
+          handler: async function (paymentResponse) {
+            if (paymentFinished) return;
+            paymentFinished = true;
+
+            try {
+              var verifyResponse = await fetch('/payment/verify', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  orderId: orderData.orderId,
+                  razorpay_order_id: paymentResponse.razorpay_order_id,
+                  razorpay_payment_id: paymentResponse.razorpay_payment_id,
+                  razorpay_signature: paymentResponse.razorpay_signature
+                })
+              });
+              var verification = await verifyResponse.json();
+
+              if (!verifyResponse.ok || verification.success !== true) {
+                throw new Error(verification.message || 'Payment verification failed.');
+              }
+
+              window.location.href = '/';
+            } catch (error) {
+              showError(error.message || 'Payment verification failed. If you were charged, please contact support.');
+              setSubmitting(false);
+            }
+          },
+          modal: {
+            ondismiss: function () {
+              if (!paymentFinished) {
+                paymentFinished = true;
+                showError('Payment window closed. Please check your orders before trying again.');
+                setSubmitting(false);
+              }
+            }
+          }
+        });
+
+        razorpay.on('payment.failed', function () {
+          if (!paymentFinished) {
+            paymentFinished = true;
+            reportPaymentFailure(orderData.orderId);
+          }
+        });
+
+        razorpay.open();
+      } catch (error) {
+        showError(error.message || 'Unable to start online payment. Please try again.');
+        setSubmitting(false);
+      }
+    }
+
+    checkoutForm.addEventListener('submit', function (event) {
+      if (isSubmitting) {
+        event.preventDefault();
+        return;
+      }
+
+      var selectedPayment = document.querySelector('input[name="paymentMethod"]:checked');
+      if (!selectedPayment) return;
+
+      if (selectedPayment.value === 'ONLINE') {
+        event.preventDefault();
+        setSubmitting(true);
+        startOnlinePayment();
+      } else {
+        setSubmitting(true);
+      }
+    });
+  })();
+</script>
+
+<%- include('../partials/footer') %>

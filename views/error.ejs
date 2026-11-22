@@ -1,0 +1,21 @@
+<%- include('partials/header', { title: 'Error ' + statusCode }) %>
+
+<section class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-9 col-lg-7">
+      <div class="card border-0 shadow-sm rounded-4 text-center">
+        <div class="card-body p-4 p-md-5">
+          <p class="display-1 fw-bold text-primary mb-2"><%= statusCode %></p>
+          <h1 class="h3 fw-semibold mb-3">Oops! Something went wrong.</h1>
+          <p class="text-secondary mb-4"><%= message %></p>
+          <div class="d-flex flex-column flex-sm-row justify-content-center gap-2">
+            <a class="btn btn-primary" href="/">Back to home</a>
+            <button class="btn btn-outline-primary" type="button" onclick="window.history.back()">Go back</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('partials/footer') %>

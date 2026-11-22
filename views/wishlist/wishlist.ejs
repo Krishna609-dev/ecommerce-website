@@ -1,0 +1,359 @@
+
+<%- include('../partials/header', { title: 'My Wishlist' }) %>
+<%- include('../partials/flash') %>
+
+<%
+  function getWishlistImg(product) {
+    if (product.images && product.images.length > 0) {
+      var img = product.images[0];
+      if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('/')) {
+        return img;
+      }
+      return '/uploads/' + encodeURIComponent(img);
+    }
+    return '/uploads/iphone-16-pro-front.jpg';
+  }
+%>
+
+<section class="container py-4 py-md-5">
+
+  <!-- Wishlist Header -->
+  <div class="mb-4 d-flex flex-wrap align-items-center justify-content-between gap-3">
+    <div>
+      <h1 class="h2 fw-bold text-dark mb-1">
+        My Wishlist
+        <span class="text-secondary fs-5">
+          (<%= products.length %> <%= products.length === 1 ? 'item' : 'items' %>)
+        </span>
+      </h1>
+      <p class="text-secondary mb-0">
+        Your saved flagship devices and accessories, ready when you are.
+      </p>
+    </div>
+
+    <a href="/#products" class="btn btn-outline-primary rounded-pill btn-sm">
+      <i class="bi bi-arrow-left me-1"></i> Continue Shopping
+    </a>
+  </div>
+
+  <% if (products.length) { %>
+
+    <div class="row g-3 g-md-4">
+
+      <% products.forEach(function(product) {
+        var productId = String(product._id);
+        var imgSrc = getWishlistImg(product);
+      %>
+
+        <div class="col-6 col-md-4 col-xl-3">
+
+          <article class="product-card h-100">
+
+            <!-- Product Image -->
+            <div class="product-media-wrapper">
+
+              <a href="/products/<%= encodeURIComponent(productId) %>"
+                 class="d-block w-100 h-100 text-center"
+                 aria-label="View <%= product.name %> details">
+
+                <img
+                  class="product-card-img"
+                  src="<%= imgSrc %>"
+                  alt="<%= product.name %>"
+                  loading="lazy">
+
+              </a>
+
+            </div>
+
+            <!-- Product Details -->
+            <div class="card-product-content">
+
+              <div class="product-category-name">
+                <%= product.category ? product.category.name : 'Electronics' %>
+              </div>
+
+              <a href="/products/<%= encodeURIComponent(productId) %>"
+                 class="product-title-text"
+                 title="<%= product.name %>">
+
+                <%= product.name %>
+
+              </a>
+
+              <!-- Price -->
+              <div class="product-pricing-box">
+                <span class="current-price">
+                  &#8377;<%= Number(product.price).toLocaleString('en-IN') %>
+                </span>
+              </div>
+
+              <!-- Stock Status -->
+              <% if (product.stock === 0) { %>
+
+                <div class="stock-tag-pill stock-out">
+                  <span class="stock-dot"></span> Out of Stock
+                </div>
+
+              <% } else if (product.stock <= 5) { %>
+
+                <div class="stock-tag-pill stock-low">
+                  <span class="stock-dot"></span> Only <%= product.stock %> left
+                </div>
+
+              <% } else { %>
+
+                <div class="stock-tag-pill stock-in">
+                  <span class="stock-dot"></span> In Stock
+                </div>
+
+              <% } %>
+
+              <!-- Action Buttons -->
+              <div class="mt-auto d-grid gap-2">
+
+                <% if (product.stock === 0) { %>
+
+                  <button class="btn btn-secondary btn-sm"
+                          type="button"
+                          disabled>
+                    Out of stock
+                  </button>
+
+                <% } else { %>
+
+                  <form action="/cart/add" method="POST" class="m-0">
+
+                    <input type="hidden"
+                           name="productId"
+                           value="<%= productId %>">
+
+                    <input type="hidden"
+                           name="quantity"
+                           value="1">
+
+                    <button class="btn btn-add-cart w-100" type="submit">
+                      <i class="bi bi-cart-plus me-1"></i> Move to Cart
+                    </button>
+
+                  </form>
+
+                <% } %>
+
+                <!-- Remove Button -->
+                <form
+                  action="/wishlist/remove/<%= encodeURIComponent(productId) %>?_method=DELETE"
+                  method="POST"
+                  class="m-0 remove-wishlist-form">
+
+                  <button class="btn btn-outline-danger btn-sm w-100"
+                          type="submit">
+
+                    <i class="bi bi-trash me-1"></i> Remove
+
+                  </button>
+
+                </form>
+
+              </div>
+
+            </div>
+
+          </article>
+
+        </div>
+
+      <% }) %>
+
+    </div>
+
+  <% } else { %>
+
+    <!-- Empty Wishlist -->
+    <div class="card border-0 shadow-sm rounded-4 text-center p-4 p-md-5">
+
+      <div class="display-3 text-secondary mb-3">
+        <i class="bi bi-heart"></i>
+      </div>
+
+      <h2 class="h4 fw-bold text-dark">
+        Your Wishlist is Empty
+      </h2>
+
+      <p class="text-secondary mb-4">
+        Save products you love as you browse and easily find them here anytime.
+      </p>
+
+      <div>
+        <a class="btn btn-primary rounded-pill px-4 py-2"
+           href="/#products">
+
+          <i class="bi bi-bag-plus me-1"></i>
+          Explore Flagships & Devices
+
+        </a>
+      </div>
+
+    </div>
+
+  <% } %>
+
+</section>
+
+
+<!-- ======================================
+     REMOVE WISHLIST CONFIRMATION MODAL
+====================================== -->
+
+<div id="removeWishlistModal"
+     class="wishlist-modal-overlay"
+     aria-hidden="true">
+
+  <div class="wishlist-modal-box"
+       role="dialog"
+       aria-modal="true"
+       aria-labelledby="wishlistModalTitle"
+       aria-describedby="wishlistModalDescription">
+
+    <!-- Close Icon -->
+    <button type="button"
+            class="wishlist-modal-close"
+            id="closeWishlistModal"
+            aria-label="Close modal">
+
+      <i class="bi bi-x-lg"></i>
+
+    </button>
+
+    <!-- Modal Icon -->
+    <div class="wishlist-modal-icon">
+      <i class="bi bi-heartbreak"></i>
+    </div>
+
+    <!-- Modal Content -->
+    <h3 id="wishlistModalTitle">
+      Remove from Wishlist?
+    </h3>
+
+    <p id="wishlistModalDescription">
+      Are you sure you want to remove this product from your wishlist?
+    </p>
+
+    <!-- Modal Buttons -->
+    <div class="wishlist-modal-actions">
+
+      <button type="button"
+              class="wishlist-cancel-btn"
+              id="cancelWishlistRemove">
+
+        Cancel
+
+      </button>
+
+      <button type="button"
+              class="wishlist-confirm-btn"
+              id="confirmWishlistRemove">
+
+        <i class="bi bi-trash me-1"></i>
+        Yes, Remove
+
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- ======================================
+     MODAL JAVASCRIPT
+====================================== -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const modal = document.getElementById('removeWishlistModal');
+
+    const cancelBtn = document.getElementById('cancelWishlistRemove');
+
+    const closeBtn = document.getElementById('closeWishlistModal');
+
+    const confirmBtn = document.getElementById('confirmWishlistRemove');
+
+    const removeForms = document.querySelectorAll('.remove-wishlist-form');
+
+    let selectedForm = null;
+
+    // Open modal
+    removeForms.forEach(function (form) {
+
+        form.addEventListener('submit', function (event) {
+
+            event.preventDefault();
+
+            selectedForm = this;
+
+            modal.style.display = 'flex';
+
+            modal.setAttribute('aria-hidden', 'false');
+
+            cancelBtn.focus();
+
+        });
+
+    });
+
+    // Close modal
+    function closeModal() {
+
+        modal.style.display = 'none';
+
+        modal.setAttribute('aria-hidden', 'true');
+
+        selectedForm = null;
+
+    }
+
+    cancelBtn.addEventListener('click', closeModal);
+
+    closeBtn.addEventListener('click', closeModal);
+
+    // Close when clicking outside modal
+    modal.addEventListener('click', function (event) {
+
+        if (event.target === modal) {
+            closeModal();
+        }
+
+    });
+
+    // Close using Escape key
+    document.addEventListener('keydown', function (event) {
+
+        if (event.key === 'Escape' && modal.style.display === 'flex') {
+            closeModal();
+        }
+
+    });
+
+    // Confirm removal
+    confirmBtn.addEventListener('click', function () {
+
+        if (selectedForm) {
+
+            confirmBtn.disabled = true;
+
+            selectedForm.submit();
+
+        }
+
+    });
+
+});
+</script>
+
+<%- include('../partials/footer') %>
+
+
+

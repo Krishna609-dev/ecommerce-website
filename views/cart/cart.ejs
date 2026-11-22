@@ -1,0 +1,920 @@
+
+<%- include('../partials/header', { title: 'Your cart' }) %>
+<%- include('../partials/flash') %>
+
+<style>
+  .cart-product-image,
+  .cart-image-placeholder {
+    width: 5rem;
+    height: 5rem;
+    object-fit: cover;
+  }
+
+  .cart-image-placeholder {
+    background: #e5e7eb;
+  }
+
+  .cart-mobile-card {
+    border: 0;
+    border-radius: 1rem;
+    box-shadow: 0 .25rem 1rem rgba(15, 23, 42, .06);
+  }
+
+  /* =================================
+     CART REMOVE CONFIRMATION MODAL
+  ================================= */
+
+  .cart-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(5px);
+    -webkit-backdrop-filter: blur(5px);
+    justify-content: center;
+    align-items: center;
+    padding: 20px;
+    z-index: 10000;
+  }
+
+  .cart-modal-box {
+    position: relative;
+    background: #ffffff;
+    width: 100%;
+    max-width: 420px;
+    padding: 35px 28px;
+    border-radius: 20px;
+    text-align: center;
+    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+    animation: cartModalOpen 0.25s ease;
+  }
+
+  .cart-modal-close {
+    position: absolute;
+    top: 15px;
+    right: 17px;
+    background: transparent;
+    border: none;
+    color: #64748b;
+    font-size: 18px;
+    cursor: pointer;
+  }
+
+  .cart-modal-icon {
+    width: 70px;
+    height: 70px;
+    background: #fff1f2;
+    color: #e11d48;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 30px;
+    margin: 0 auto 20px;
+  }
+
+  .cart-modal-box h3 {
+    font-size: 22px;
+    font-weight: 700;
+    color: #1e293b;
+    margin-bottom: 12px;
+  }
+
+  .cart-modal-box p {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #64748b;
+    margin-bottom: 25px;
+  }
+
+  .cart-modal-actions {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+  }
+
+  .cart-cancel-btn,
+  .cart-confirm-btn {
+    padding: 11px 20px;
+    border-radius: 9px;
+    border: none;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+  }
+
+  .cart-cancel-btn {
+    background: #f1f5f9;
+    color: #334155;
+  }
+
+  .cart-cancel-btn:hover {
+    background: #e2e8f0;
+  }
+
+  .cart-confirm-btn {
+    background: #e11d48;
+    color: #ffffff;
+  }
+
+  .cart-confirm-btn:hover {
+    background: #be123c;
+  }
+
+  .cart-confirm-btn:disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  @keyframes cartModalOpen {
+    from {
+      opacity: 0;
+      transform: translateY(15px) scale(0.95);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+    }
+  }
+
+  @media (max-width: 480px) {
+    .cart-modal-box {
+      padding: 30px 20px;
+    }
+
+    .cart-modal-actions {
+      flex-direction: column-reverse;
+    }
+
+    .cart-cancel-btn,
+    .cart-confirm-btn {
+      width: 100%;
+    }
+  }
+</style>
+
+<section class="container py-4 py-md-5">
+
+  <div class="mb-4">
+    <h1 class="h2 fw-bold mb-1">Your cart</h1>
+    <p class="text-secondary mb-0">
+      Review your items before checkout.
+    </p>
+  </div>
+
+  <div class="row g-4 align-items-start">
+
+    <div class="col-12 col-lg-8">
+
+      <% if (items.length) { %>
+
+        <!-- DESKTOP CART TABLE -->
+
+        <div class="d-none d-lg-block card border-0 shadow-sm rounded-4 overflow-hidden">
+
+          <div class="table-responsive">
+
+            <table class="table align-middle mb-0">
+
+              <thead class="table-light">
+                <tr>
+                  <th scope="col">Product</th>
+                  <th scope="col">Price</th>
+                  <th scope="col">Quantity</th>
+                  <th scope="col">Total</th>
+                  <th scope="col">
+                    <span class="visually-hidden">Remove</span>
+                  </th>
+                </tr>
+              </thead>
+
+              <tbody>
+
+                <% items.forEach(function(item) {
+                  var productId = String(item.product._id);
+                  var hasImage = item.product.images && item.product.images.length > 0;
+                %>
+
+                  <tr>
+
+                    <!-- Product -->
+                    <td>
+
+                      <div class="d-flex align-items-center gap-3">
+
+                        <% if (hasImage) { %>
+
+                          <img
+                            class="cart-product-image rounded-3"
+                            src="/uploads/<%= encodeURIComponent(item.product.images[0]) %>"
+                            alt="<%= item.product.name %>">
+
+                        <% } else { %>
+
+                          <div
+                            class="cart-image-placeholder rounded-3 d-flex align-items-center justify-content-center"
+                            role="img"
+                            aria-label="No image available for <%= item.product.name %>">
+
+                            <i class="bi bi-image text-secondary"
+                               aria-hidden="true"></i>
+
+                          </div>
+
+                        <% } %>
+
+                        <div>
+
+                          <a
+                            class="fw-semibold text-decoration-none"
+                            href="/products/<%= encodeURIComponent(productId) %>">
+
+                            <%= item.product.name %>
+
+                          </a>
+
+                          <% if (item.product.stock < item.quantity) { %>
+
+                            <div>
+                              <span class="badge bg-warning text-dark mt-1">
+                                Only <%= item.product.stock %> in stock
+                              </span>
+                            </div>
+
+                          <% } %>
+
+                        </div>
+
+                      </div>
+
+                    </td>
+
+                    <!-- Price -->
+                    <td>
+                      &#8377;<%= Number(item.product.price).toFixed(2) %>
+                    </td>
+
+                    <!-- Quantity -->
+                    <td>
+
+                      <div class="d-flex align-items-center gap-2">
+
+                        <form
+                          action="/cart/update/<%= encodeURIComponent(productId) %>"
+                          method="POST">
+
+                          <input
+                            type="hidden"
+                            name="quantity"
+                            value="<%= item.quantity - 1 %>">
+
+                          <button
+                            class="btn btn-sm btn-outline-secondary"
+                            type="submit"
+                            aria-label="Decrease quantity of <%= item.product.name %>"
+                            <%= item.quantity <= 1 ? 'disabled' : '' %>>
+
+                            −
+
+                          </button>
+
+                        </form>
+
+                        <span class="fw-semibold" aria-label="Quantity">
+                          <%= item.quantity %>
+                        </span>
+
+                        <form
+                          action="/cart/update/<%= encodeURIComponent(productId) %>"
+                          method="POST">
+
+                          <input
+                            type="hidden"
+                            name="quantity"
+                            value="<%= item.quantity + 1 %>">
+
+                          <button
+                            class="btn btn-sm btn-outline-secondary"
+                            type="submit"
+                            aria-label="Increase quantity of <%= item.product.name %>"
+                            <%= item.quantity >= item.product.stock ? 'disabled' : '' %>>
+
+                            +
+
+                          </button>
+
+                        </form>
+
+                      </div>
+
+                    </td>
+
+                    <!-- Line Total -->
+                    <td class="fw-semibold">
+                      &#8377;<%= Number(item.lineTotal).toFixed(2) %>
+                    </td>
+
+                    <!-- Remove Button -->
+                    <td class="text-end">
+
+                      <form
+                        action="/cart/remove/<%= encodeURIComponent(productId) %>"
+                        method="POST"
+                        class="cart-remove-form">
+
+                        <button
+                          class="btn btn-sm btn-outline-danger"
+                          type="submit"
+                          aria-label="Remove <%= item.product.name %> from cart">
+
+                          <i class="bi bi-trash" aria-hidden="true"></i>
+
+                        </button>
+
+                      </form>
+
+                    </td>
+
+                  </tr>
+
+                <% }) %>
+
+              </tbody>
+
+            </table>
+
+          </div>
+
+        </div>
+
+
+        <!-- MOBILE CART CARDS -->
+
+        <div class="d-lg-none d-grid gap-3">
+
+          <% items.forEach(function(item) {
+            var productId = String(item.product._id);
+            var hasImage = item.product.images && item.product.images.length > 0;
+          %>
+
+            <article class="card cart-mobile-card">
+
+              <div class="card-body">
+
+                <div class="d-flex gap-3">
+
+                  <% if (hasImage) { %>
+
+                    <img
+                      class="cart-product-image rounded-3 flex-shrink-0"
+                      src="/uploads/<%= encodeURIComponent(item.product.images[0]) %>"
+                      alt="<%= item.product.name %>">
+
+                  <% } else { %>
+
+                    <div
+                      class="cart-image-placeholder rounded-3 flex-shrink-0 d-flex align-items-center justify-content-center"
+                      role="img"
+                      aria-label="No image available for <%= item.product.name %>">
+
+                      <i class="bi bi-image text-secondary"></i>
+
+                    </div>
+
+                  <% } %>
+
+                  <div class="flex-grow-1 min-w-0">
+
+                    <a
+                      class="fw-semibold text-decoration-none"
+                      href="/products/<%= encodeURIComponent(productId) %>">
+
+                      <%= item.product.name %>
+
+                    </a>
+
+                    <p class="text-secondary small mb-1">
+                      Unit price:
+                      &#8377;<%= Number(item.product.price).toFixed(2) %>
+                    </p>
+
+                    <% if (item.product.stock < item.quantity) { %>
+
+                      <span class="badge bg-warning text-dark mb-2">
+                        Only <%= item.product.stock %> in stock
+                      </span>
+
+                    <% } %>
+
+                  </div>
+
+                </div>
+
+                <!-- Mobile Quantity -->
+                <div class="d-flex justify-content-between align-items-center mt-3">
+
+                  <span class="text-secondary">Quantity</span>
+
+                  <div class="d-flex align-items-center gap-2">
+
+                    <form
+                      action="/cart/update/<%= encodeURIComponent(productId) %>"
+                      method="POST">
+
+                      <input
+                        type="hidden"
+                        name="quantity"
+                        value="<%= item.quantity - 1 %>">
+
+                      <button
+                        class="btn btn-sm btn-outline-secondary"
+                        type="submit"
+                        aria-label="Decrease quantity of <%= item.product.name %>"
+                        <%= item.quantity <= 1 ? 'disabled' : '' %>>
+
+                        −
+
+                      </button>
+
+                    </form>
+
+                    <span class="fw-semibold">
+                      <%= item.quantity %>
+                    </span>
+
+                    <form
+                      action="/cart/update/<%= encodeURIComponent(productId) %>"
+                      method="POST">
+
+                      <input
+                        type="hidden"
+                        name="quantity"
+                        value="<%= item.quantity + 1 %>">
+
+                      <button
+                        class="btn btn-sm btn-outline-secondary"
+                        type="submit"
+                        aria-label="Increase quantity of <%= item.product.name %>"
+                        <%= item.quantity >= item.product.stock ? 'disabled' : '' %>>
+
+                        +
+
+                      </button>
+
+                    </form>
+
+                  </div>
+
+                </div>
+
+                <!-- Line Total -->
+                <div class="d-flex justify-content-between align-items-center border-top mt-3 pt-3">
+
+                  <span class="fw-semibold">Line total</span>
+
+                  <span class="fw-bold">
+                    &#8377;<%= Number(item.lineTotal).toFixed(2) %>
+                  </span>
+
+                </div>
+
+                <!-- Mobile Remove Button -->
+                <form
+                  action="/cart/remove/<%= encodeURIComponent(productId) %>"
+                  method="POST"
+                  class="mt-3 cart-remove-form">
+
+                  <button
+                    class="btn btn-sm btn-outline-danger w-100"
+                    type="submit">
+
+                    <i class="bi bi-trash me-1" aria-hidden="true"></i>
+                    Remove item
+
+                  </button>
+
+                </form>
+
+              </div>
+
+            </article>
+
+          <% }) %>
+
+        </div>
+
+
+        <!-- COUPON SECTION -->
+
+        <section
+          class="card border-0 shadow-sm rounded-4 mt-4"
+          aria-labelledby="couponTitle">
+
+          <div class="card-body p-3 p-md-4">
+
+            <h2 class="h5 fw-semibold mb-3" id="couponTitle">
+              Available Coupon
+            </h2>
+
+            <% if (couponCode) { %>
+
+              <div class="alert alert-success">
+
+                <strong>
+                  🎉 Coupon <%= couponCode %> applied!
+                </strong>
+
+                <p class="mb-0">
+                  You have received your discount.
+                </p>
+
+              </div>
+
+              <form action="/cart/coupon/remove" method="POST">
+
+                <button
+                  class="btn btn-outline-danger btn-sm"
+                  type="submit">
+
+                  Remove Coupon
+
+                </button>
+
+              </form>
+
+            <% } else { %>
+
+              <div
+                class="p-3 rounded-3 mb-3"
+                style="background:#eff6ff; border:1px dashed #2563eb;">
+
+                <h5 class="text-primary fw-bold mb-2">
+                  🎁 SAVE20 - Get 20% OFF
+                </h5>
+
+                <p class="mb-1">
+                  Minimum order value:
+                  <strong>₹1,000</strong>
+                </p>
+
+                <% if (subtotal >= 1000) { %>
+
+                  <p class="text-success mb-0">
+                    Congratulations! You are eligible for this coupon.
+                  </p>
+
+                  <p class="mb-0 mt-2">
+
+                    <strong>How to apply:</strong>
+
+                    Type <strong>SAVE20</strong> in the box below
+                    and click Apply Coupon.
+
+                  </p>
+
+                <% } else { %>
+
+                  <p class="text-danger mb-0">
+
+                    Add ₹<%= (1000 - subtotal).toFixed(2) %> more
+                    to unlock this coupon.
+
+                  </p>
+
+                <% } %>
+
+              </div>
+
+              <% if (couponError) { %>
+
+                <div class="alert alert-danger py-2">
+                  <%= couponError %>
+                </div>
+
+              <% } %>
+
+              <!-- Coupon Form -->
+              <form
+                action="/cart/coupon/apply"
+                method="POST"
+                class="d-flex flex-column flex-sm-row gap-2">
+
+                <label class="visually-hidden" for="couponCode">
+                  Coupon code
+                </label>
+
+                <input
+                  class="form-control"
+                  id="couponCode"
+                  name="couponCode"
+                  type="text"
+                  placeholder="Type SAVE20"
+                  required>
+
+                <button
+                  class="btn btn-outline-primary flex-shrink-0"
+                  type="submit"
+                  <%= subtotal < 1000 ? 'disabled' : '' %>>
+
+                  Apply Coupon
+
+                </button>
+
+              </form>
+
+            <% } %>
+
+          </div>
+
+        </section>
+
+      <% } else { %>
+
+        <!-- EMPTY CART -->
+
+        <div class="card border-0 shadow-sm rounded-4 text-center">
+
+          <div class="card-body p-4 p-md-5">
+
+            <i
+              class="bi bi-cart3 display-3 text-secondary"
+              aria-hidden="true"></i>
+
+            <h2 class="h4 fw-semibold mt-3">
+              Your cart is empty
+            </h2>
+
+            <p class="text-secondary mb-4">
+              Looks like you haven't added anything to your cart yet.
+            </p>
+
+            <a class="btn btn-primary" href="/">
+              Continue shopping
+            </a>
+
+          </div>
+
+        </div>
+
+      <% } %>
+
+    </div>
+
+
+    <!-- ORDER SUMMARY -->
+
+    <aside
+      class="col-12 col-lg-4"
+      aria-labelledby="orderSummaryTitle">
+
+      <div class="card border-0 shadow-sm rounded-4">
+
+        <div class="card-body p-3 p-md-4">
+
+          <h2 class="h5 fw-bold mb-4" id="orderSummaryTitle">
+            Order summary
+          </h2>
+
+          <div class="d-flex justify-content-between mb-3">
+
+            <span class="text-secondary">Subtotal</span>
+
+            <span>
+              &#8377;<%= Number(subtotal).toFixed(2) %>
+            </span>
+
+          </div>
+
+          <% if (discount > 0) { %>
+
+            <div class="d-flex justify-content-between text-success mb-3">
+
+              <span>Discount</span>
+
+              <span>
+                - &#8377;<%= Number(discount).toFixed(2) %>
+              </span>
+
+            </div>
+
+          <% } %>
+
+          <hr>
+
+          <div class="d-flex justify-content-between fw-bold fs-5 mb-4">
+
+            <span>Total</span>
+
+            <span>
+              &#8377;<%= Number(total).toFixed(2) %>
+            </span>
+
+          </div>
+
+          <% if (items.length) { %>
+
+            <a
+              class="btn btn-primary btn-lg w-100"
+              href="/checkout">
+
+              Proceed to checkout
+
+            </a>
+
+          <% } else { %>
+
+            <button
+              class="btn btn-secondary btn-lg w-100"
+              type="button"
+              disabled>
+
+              Proceed to checkout
+
+            </button>
+
+          <% } %>
+
+        </div>
+
+      </div>
+
+    </aside>
+
+  </div>
+
+</section>
+
+
+<!-- =====================================
+     CART REMOVE CONFIRMATION MODAL
+===================================== -->
+
+<div
+  id="cartRemoveModal"
+  class="cart-modal-overlay"
+  aria-hidden="true">
+
+  <div
+    class="cart-modal-box"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="cartModalTitle"
+    aria-describedby="cartModalDescription">
+
+    <!-- Close Button -->
+    <button
+      type="button"
+      class="cart-modal-close"
+      id="closeCartModal"
+      aria-label="Close modal">
+
+      <i class="bi bi-x-lg"></i>
+
+    </button>
+
+    <!-- Modal Icon -->
+    <div class="cart-modal-icon">
+
+      <i class="bi bi-cart-x"></i>
+
+    </div>
+
+    <!-- Modal Heading -->
+    <h3 id="cartModalTitle">
+      Remove from Cart?
+    </h3>
+
+    <!-- Modal Description -->
+    <p id="cartModalDescription">
+      Are you sure you want to remove this product from your cart?
+    </p>
+
+    <!-- Modal Actions -->
+    <div class="cart-modal-actions">
+
+      <button
+        type="button"
+        class="cart-cancel-btn"
+        id="cancelCartRemove">
+
+        Cancel
+
+      </button>
+
+      <button
+        type="button"
+        class="cart-confirm-btn"
+        id="confirmCartRemove">
+
+        <i class="bi bi-trash me-1"></i>
+        Yes, Remove
+
+      </button>
+
+    </div>
+
+  </div>
+
+</div>
+
+
+<!-- =====================================
+     CART MODAL JAVASCRIPT
+===================================== -->
+
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+
+    const modal = document.getElementById('cartRemoveModal');
+
+    const cancelBtn = document.getElementById('cancelCartRemove');
+
+    const closeBtn = document.getElementById('closeCartModal');
+
+    const confirmBtn = document.getElementById('confirmCartRemove');
+
+    const removeForms = document.querySelectorAll('.cart-remove-form');
+
+    let selectedForm = null;
+
+    // Open confirmation modal
+    removeForms.forEach(function (form) {
+
+        form.addEventListener('submit', function (event) {
+
+            event.preventDefault();
+
+            selectedForm = this;
+
+            modal.style.display = 'flex';
+
+            modal.setAttribute('aria-hidden', 'false');
+
+            cancelBtn.focus();
+
+        });
+
+    });
+
+    // Close modal
+    function closeModal() {
+
+        modal.style.display = 'none';
+
+        modal.setAttribute('aria-hidden', 'true');
+
+        selectedForm = null;
+
+        confirmBtn.disabled = false;
+
+    }
+
+    // Cancel button
+    cancelBtn.addEventListener('click', closeModal);
+
+    // Close icon
+    closeBtn.addEventListener('click', closeModal);
+
+    // Click outside modal
+    modal.addEventListener('click', function (event) {
+
+        if (event.target === modal) {
+            closeModal();
+        }
+
+    });
+
+    // Escape key
+    document.addEventListener('keydown', function (event) {
+
+        if (event.key === 'Escape' && modal.style.display === 'flex') {
+
+            closeModal();
+
+        }
+
+    });
+
+    // Confirm product removal
+    confirmBtn.addEventListener('click', function () {
+
+        if (selectedForm) {
+
+            const formToSubmit = selectedForm;
+
+            confirmBtn.disabled = true;
+
+            formToSubmit.submit();
+
+        }
+
+    });
+
+});
+</script>
+
+<%- include('../partials/footer') %>

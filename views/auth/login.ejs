@@ -1,0 +1,63 @@
+<%- include('../partials/header', { title: 'Welcome back' }) %>
+<%- include('../partials/flash') %>
+
+<section class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+      <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4 p-md-5">
+          <h1 class="h3 text-center fw-bold mb-4">Welcome back</h1>
+
+          <% if (errors.length) { %>
+            <div class="alert alert-danger" role="alert" aria-labelledby="loginErrorsTitle">
+              <h2 class="h6 alert-heading" id="loginErrorsTitle">Unable to log in:</h2>
+              <ul class="mb-0">
+                <% errors.forEach(function(item) { %>
+                  <li><%= item.msg %></li>
+                <% }) %>
+              </ul>
+            </div>
+          <% } %>
+
+          <form action="/login" method="POST">
+            <div class="mb-3">
+              <label class="form-label" for="email">Email</label>
+              <input class="form-control" id="email" name="email" type="email" value="<%= old.email %>" autocomplete="email" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="password">Password</label>
+              <div class="input-group">
+                <input class="form-control" id="password" name="password" type="password" autocomplete="current-password" required>
+                <button class="btn btn-outline-secondary" type="button" id="passwordToggle" aria-label="Show password" aria-pressed="false">Show</button>
+              </div>
+            </div>
+
+            <div class="text-end mb-4">
+              <a href="/forgot-password">Forgot password?</a>
+            </div>
+
+            <button class="btn btn-primary w-100" type="submit">Login</button>
+          </form>
+
+          <p class="text-center text-secondary mt-4 mb-0">
+            New here? <a href="/register">Register</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+  document.getElementById('passwordToggle').addEventListener('click', function () {
+    var password = document.getElementById('password');
+    var visible = password.type === 'password';
+    password.type = visible ? 'text' : 'password';
+    this.textContent = visible ? 'Hide' : 'Show';
+    this.setAttribute('aria-label', (visible ? 'Hide' : 'Show') + ' password');
+    this.setAttribute('aria-pressed', String(visible));
+  });
+</script>
+
+<%- include('../partials/footer') %>

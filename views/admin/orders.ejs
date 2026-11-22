@@ -1,0 +1,103 @@
+<%- include('partials/admin-header', { title: 'Orders', activePage: 'orders' }) %>
+
+<%
+  var orderStatuses = [
+    { label: 'All', value: '' },
+    { label: 'Pending', value: 'Pending' },
+    { label: 'Processing', value: 'Processing' },
+    { label: 'Shipped', value: 'Shipped' },
+    { label: 'Delivered', value: 'Delivered' },
+    { label: 'Cancelled', value: 'Cancelled' }
+  ];
+%>
+
+<div class="admin-page-header">
+  <div>
+    <h2 class="h3 fw-bold">Orders</h2>
+    <p class="text-secondary mb-0">Review and track customer orders.</p>
+  </div>
+</div>
+
+<nav class="mb-4" aria-label="Filter orders by status">
+  <div class="d-flex flex-wrap gap-2">
+    <% orderStatuses.forEach(function(status) { %>
+      <a
+        class="btn btn-sm rounded-pill <%= selectedStatus === status.value ? 'btn-primary' : 'btn-outline-primary' %>"
+        href="<%= status.value ? '/admin/orders?status=' + encodeURIComponent(status.value) : '/admin/orders' %>"
+        <%= selectedStatus === status.value ? 'aria-current="page"' : '' %>>
+        <%= status.label %>
+      </a>
+    <% }) %>
+  </div>
+</nav>
+
+<section class="card" aria-labelledby="ordersTableTitle">
+  <div class="card-body p-0">
+    <h3 class="visually-hidden" id="ordersTableTitle">Orders list</h3>
+    <% if (orders.length) { %>
+      <div class="table-responsive">
+        <table class="table table-striped table-hover small mb-0">
+          <thead>
+            <tr>
+              <th scope="col">Order</th>
+              <th scope="col">Customer</th>
+              <th scope="col">Date</th>
+              <th scope="col">Total</th>
+              <th scope="col">Payment method</th>
+              <th scope="col">Payment status</th>
+              <th scope="col">Order status</th>
+              <th scope="col" class="text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% orders.forEach(function(order) {
+              var orderId = String(order._id);
+              var shortOrderId = orderId.length > 8 ? orderId.slice(-8) : orderId;
+              var paymentStatusClass = {
+                'Paid': 'bg-success',
+                'Pending': 'bg-warning text-dark',
+                'Failed': 'bg-danger',
+                'Refund Pending': 'bg-secondary'
+              }[order.paymentStatus] || 'bg-secondary';
+              var orderStatusClass = {
+                'Pending': 'bg-warning text-dark',
+                'Processing': 'bg-info text-dark',
+                'Shipped': 'bg-primary',
+                'Delivered': 'bg-success',
+                'Cancelled': 'bg-danger'
+              }[order.status] || 'bg-secondary';
+            %>
+              <tr>
+                <td class="fw-semibold">#<%= shortOrderId %></td>
+                <td>
+                  <span class="d-block fw-semibold"><%= order.user.name %></span>
+                  <span class="text-secondary"><%= order.user.email %></span>
+                </td>
+                <td><%= new Date(order.createdAt).toLocaleDateString() %></td>
+                <td class="text-nowrap">&#8377;<%= Number(order.totalAmount).toFixed(2) %></td>
+                <td><%= order.paymentMethod %></td>
+                <td><span class="badge <%= paymentStatusClass %>"><%= order.paymentStatus %></span></td>
+                <td><span class="badge <%= orderStatusClass %>"><%= order.status %></span></td>
+                <td class="text-end">
+                  <a class="btn btn-sm btn-outline-primary" href="/admin/orders/<%= encodeURIComponent(orderId) %>">View</a>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <div class="text-center px-4 py-5">
+        <i class="bi bi-receipt display-4 text-secondary" aria-hidden="true"></i>
+        <h3 class="h5 fw-semibold mt-3">No orders found</h3>
+        <p class="text-secondary mb-0">Orders matching this status will appear here.</p>
+      </div>
+    <% } %>
+  </div>
+</section>
+
+<div class="mt-4">
+  <%- include('../partials/pagination') %>
+</div>
+
+<%- include('partials/admin-footer') %>

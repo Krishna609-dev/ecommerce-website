@@ -1,0 +1,95 @@
+<%- include('../partials/header', { title: 'Create your account' }) %>
+<%- include('../partials/flash') %>
+
+<section class="container py-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-sm-10 col-md-8 col-lg-6 col-xl-5">
+      <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4 p-md-5">
+          <h1 class="h3 text-center fw-bold mb-4">Create your account</h1>
+
+          <% if (errors.length) { %>
+            <div class="alert alert-danger" role="alert" aria-labelledby="registrationErrorsTitle">
+              <h2 class="h6 alert-heading" id="registrationErrorsTitle">Please fix the following:</h2>
+              <ul class="mb-0">
+                <% errors.forEach(function(item) { %>
+                  <li><%= item.msg %></li>
+                <% }) %>
+              </ul>
+            </div>
+          <% } %>
+
+          <form action="/register" method="POST" id="registerForm">
+            <div class="mb-3">
+              <label class="form-label" for="name">Name</label>
+              <input class="form-control" id="name" name="name" type="text" value="<%= old.name %>" autocomplete="name" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="email">Email</label>
+              <input class="form-control" id="email" name="email" type="email" value="<%= old.email %>" autocomplete="email" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="password">Password</label>
+              <div class="input-group">
+                <input class="form-control" id="password" name="password" type="password" minlength="6" autocomplete="new-password" aria-describedby="passwordHelp" required>
+                <button class="btn btn-outline-secondary" type="button" data-password-toggle="password" aria-label="Show password" aria-pressed="false">Show</button>
+              </div>
+              <div class="form-text" id="passwordHelp">Password must be at least 6 characters.</div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="confirmPassword">Confirm password</label>
+              <div class="input-group">
+                <input class="form-control" id="confirmPassword" name="confirmPassword" type="password" minlength="6" autocomplete="new-password" required>
+                <button class="btn btn-outline-secondary" type="button" data-password-toggle="confirmPassword" aria-label="Show confirm password" aria-pressed="false">Show</button>
+              </div>
+            </div>
+
+            <p class="small text-secondary mb-4">We will email you a 6-digit OTP to verify your email</p>
+            <button class="btn btn-primary w-100" type="submit">Register</button>
+          </form>
+
+          <p class="text-center text-secondary mt-4 mb-0">
+            Already have an account? <a href="/login">Login</a>
+          </p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+
+
+<script>
+  document.querySelectorAll('[data-password-toggle]').forEach(function (button) {
+    button.addEventListener('click', function () {
+      var input = document.getElementById(button.dataset.passwordToggle);
+      var visible = input.type === 'password';
+      input.type = visible ? 'text' : 'password';
+      button.textContent = visible ? 'Hide' : 'Show';
+      button.setAttribute('aria-pressed', String(visible));
+      button.setAttribute('aria-label', (visible ? 'Hide ' : 'Show ') + (input.id === 'password' ? 'password' : 'confirm password'));
+    });
+  });
+
+  document.getElementById('registerForm').addEventListener('submit', function (event) {
+    var password = document.getElementById('password');
+    var confirmPassword = document.getElementById('confirmPassword');
+    confirmPassword.setCustomValidity(
+      password.value === confirmPassword.value ? '' : 'Passwords do not match.'
+    );
+
+    if (!this.checkValidity()) {
+      event.preventDefault();
+      this.reportValidity();
+    }
+  });
+
+  document.getElementById('confirmPassword').addEventListener('input', function () {
+    this.setCustomValidity('');
+  });
+</script>
+
+<%- include('../partials/footer') %>

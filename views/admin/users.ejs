@@ -1,0 +1,86 @@
+<%- include('partials/admin-header', { title: 'Users', activePage: 'users' }) %>
+
+<div class="admin-page-header">
+  <div>
+    <h2 class="h3 fw-bold">Users</h2>
+    <p class="text-secondary mb-0">Review accounts and manage user access.</p>
+  </div>
+</div>
+
+<section class="card" aria-labelledby="userListTitle">
+  <div class="card-body p-0">
+    <h3 class="visually-hidden" id="userListTitle">User list</h3>
+    <% if (users.length) { %>
+      <div class="table-responsive">
+        <table class="table table-striped table-hover small mb-0">
+          <thead>
+            <tr>
+              <th scope="col">Name</th>
+              <th scope="col">Email</th>
+              <th scope="col">Phone</th>
+              <th scope="col">Role</th>
+              <th scope="col">Verification</th>
+              <th scope="col">Status</th>
+              <th scope="col">Joined</th>
+              <th scope="col" class="text-end">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% users.forEach(function(account) { %>
+              <tr>
+                <td class="fw-semibold"><%= account.name %></td>
+                <td><%= account.email %></td>
+                <td><%= account.phone || '—' %></td>
+                <td>
+                  <span class="badge <%= account.role === 'admin' ? 'bg-dark' : 'bg-primary' %>"><%= account.role %></span>
+                </td>
+                <td>
+                  <% if (account.isVerified) { %>
+                    <span class="badge bg-success">Verified</span>
+                  <% } else { %>
+                    <span class="badge bg-warning text-dark">Unverified</span>
+                  <% } %>
+                </td>
+                <td>
+                  <% if (account.isBlocked) { %>
+                    <span class="badge bg-danger">Blocked</span>
+                  <% } else { %>
+                    <span class="badge bg-success">Active</span>
+                  <% } %>
+                </td>
+                <td><%= new Date(account.createdAt).toLocaleDateString() %></td>
+                <td>
+                  <% if (account.role !== 'admin') { %>
+                    <form
+                      action="/admin/users/<%= encodeURIComponent(String(account._id)) %>/toggle-block"
+                      method="POST"
+                      data-confirm="<%= account.isBlocked ? 'Unblock' : 'Block' %> <%= account.name %>?">
+                      <% if (account.isBlocked) { %>
+                        <button class="btn btn-sm btn-outline-success" type="submit">Unblock</button>
+                      <% } else { %>
+                        <button class="btn btn-sm btn-outline-danger" type="submit">Block</button>
+                      <% } %>
+                    </form>
+                  <% } else { %>
+                    <span class="text-secondary">—</span>
+                  <% } %>
+                </td>
+              </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } else { %>
+      <div class="text-center px-4 py-5">
+        <h3 class="h5 fw-semibold">No users found</h3>
+        <p class="text-secondary mb-0">User accounts will appear here.</p>
+      </div>
+    <% } %>
+  </div>
+</section>
+
+<div class="mt-4">
+  <%- include('../partials/pagination') %>
+</div>
+
+<%- include('partials/admin-footer') %>

@@ -1,0 +1,19 @@
+
+<% var paginationBase = baseQuery.startsWith('/') ? baseQuery : `?${baseQuery}`; %>
+<% if (totalPages > 1) { %>
+  <nav aria-label="Pagination">
+    <ul class="pagination justify-content-center flex-wrap">
+      <li class="page-item <%= currentPage <= 1 ? 'disabled' : '' %>">
+        <a class="page-link" href="<%= paginationBase %>page=<%= currentPage - 1 %>" aria-label="Previous" <%= currentPage <= 1 ? 'tabindex="-1" aria-disabled="true"' : '' %>>Previous</a>
+      </li>
+      <% for (let page = 1; page <= totalPages; page++) { %>
+        <li class="page-item <%= page === currentPage ? 'active' : '' %>">
+          <a class="page-link" href="<%= paginationBase %>page=<%= page %>" <%= page === currentPage ? 'aria-current="page"' : '' %>><%= page %></a>
+        </li>
+      <% } %>
+      <li class="page-item <%= currentPage >= totalPages ? 'disabled' : '' %>">
+        <a class="page-link" href="<%= paginationBase %>page=<%= currentPage + 1 %>" aria-label="Next" <%= currentPage >= totalPages ? 'tabindex="-1" aria-disabled="true"' : '' %>>Next</a>
+      </li>
+    </ul>
+  </nav>
+<% } %>

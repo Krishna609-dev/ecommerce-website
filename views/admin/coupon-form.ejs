@@ -1,0 +1,261 @@
+
+<%
+  var isEditing = Boolean(coupon);
+  var pageTitle = isEditing ? 'Edit coupon' : 'Add coupon';
+
+  var expiryDateValue = coupon && coupon.expiryDate
+    ? new Date(coupon.expiryDate).toISOString().slice(0, 10)
+    : '';
+
+  var isActiveValue = coupon
+    ? (coupon.isActive === true || coupon.isActive === 'true')
+    : true;
+%>
+
+<%- include('partials/admin-header', {
+  title: pageTitle,
+  activePage: 'coupons'
+}) %>
+
+<div class="admin-page-header">
+  <div>
+    <h2 class="h3 fw-bold"><%= pageTitle %></h2>
+    <p class="text-secondary mb-0">
+      <%= isEditing
+        ? 'Update coupon details.'
+        : 'Create a discount coupon for your store.' %>
+    </p>
+  </div>
+</div>
+
+<% if (errors && errors.length) { %>
+  <div class="alert alert-danger" role="alert" aria-labelledby="couponErrorsTitle">
+    <h3 class="h6 alert-heading" id="couponErrorsTitle">
+      Please review the following errors:
+    </h3>
+
+    <ul class="mb-0">
+      <% errors.forEach(function(item) { %>
+        <li><%= item.msg %></li>
+      <% }) %>
+    </ul>
+  </div>
+<% } %>
+
+<section class="card">
+  <div class="card-body p-3 p-md-4">
+
+    <form
+      action="<%= isEditing
+        ? '/admin/coupons/' + encodeURIComponent(String(coupon._id)) + '?_method=PUT'
+        : '/admin/coupons' %>"
+      method="POST"
+      id="couponForm">
+
+      <div class="row g-3">
+
+        <!-- Coupon code -->
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="couponCode">
+            Code
+          </label>
+
+          <input
+            class="form-control text-uppercase font-monospace"
+            id="couponCode"
+            name="code"
+            type="text"
+            value="<%= coupon ? coupon.code : '' %>"
+            placeholder="Example: SAVE20"
+            autocomplete="off"
+            required>
+        </div>
+
+
+        <!-- Discount type -->
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="discountType">
+            Discount type
+          </label>
+
+          <select
+            class="form-select"
+            id="discountType"
+            name="discountType"
+            required>
+
+            <option
+              value="percentage"
+              <%= coupon && coupon.discountType === 'percentage' ? 'selected' : '' %>>
+              Percentage
+            </option>
+
+            <option
+              value="fixed"
+              <%= coupon && coupon.discountType === 'fixed' ? 'selected' : '' %>>
+              Flat amount
+            </option>
+
+          </select>
+        </div>
+
+
+        <!-- Discount value -->
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="discountValue">
+            Discount value
+          </label>
+
+          <input
+            class="form-control"
+            id="discountValue"
+            name="discountValue"
+            type="number"
+            min="0.01"
+            step="0.01"
+            value="<%= coupon ? coupon.discountValue : '' %>"
+            required>
+
+          <div class="form-text">
+            Enter percentage or fixed discount amount.
+          </div>
+        </div>
+
+
+        <!-- Minimum order amount -->
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="minOrderAmount">
+            Minimum order amount
+          </label>
+
+          <div class="input-group">
+            <span class="input-group-text">&#8377;</span>
+
+            <input
+              class="form-control"
+              id="minOrderAmount"
+              name="minOrderAmount"
+              type="number"
+              min="0"
+              step="0.01"
+              value="<%= coupon && coupon.minOrderAmount !== undefined ? coupon.minOrderAmount : 0 %>"
+              required>
+          </div>
+        </div>
+
+
+        <!-- Maximum discount -->
+        <div class="col-12 col-md-6" id="maxDiscountField">
+          <label class="form-label" for="maxDiscount">
+            Maximum discount
+          </label>
+
+          <div class="input-group">
+            <span class="input-group-text">&#8377;</span>
+
+            <input
+              class="form-control"
+              id="maxDiscount"
+              name="maxDiscount"
+              type="number"
+              min="0"
+              step="0.01"
+              value="<%= coupon && coupon.maxDiscount !== null && coupon.maxDiscount !== undefined ? coupon.maxDiscount : '' %>">
+          </div>
+
+          <div class="form-text">
+            Optional cap for percentage discounts.
+          </div>
+        </div>
+
+
+        <!-- Expiry date -->
+        <div class="col-12 col-md-6">
+          <label class="form-label" for="expiryDate">
+            Expiry date
+          </label>
+
+          <input
+            class="form-control"
+            id="expiryDate"
+            name="expiryDate"
+            type="date"
+            value="<%= expiryDateValue %>"
+            required>
+        </div>
+
+
+        <!-- Active status -->
+        <div class="col-12">
+          <div class="form-check">
+
+            <input
+              class="form-check-input"
+              id="isActive"
+              name="isActive"
+              type="checkbox"
+              value="true"
+              <%= isActiveValue ? 'checked' : '' %>>
+
+            <label class="form-check-label" for="isActive">
+              Coupon is active
+            </label>
+
+          </div>
+        </div>
+
+      </div>
+
+
+      <!-- Form buttons -->
+      <div class="d-flex flex-column flex-sm-row justify-content-end gap-2 mt-4">
+
+        <a class="btn btn-outline-danger" href="/admin/coupons">
+          Cancel
+        </a>
+
+        <button class="btn btn-primary" type="submit">
+          <%= isEditing ? 'Save changes' : 'Save coupon' %>
+        </button>
+
+      </div>
+
+    </form>
+
+  </div>
+</section>
+
+
+<script>
+  (function () {
+
+    const codeInput = document.getElementById('couponCode');
+    const discountType = document.getElementById('discountType');
+    const maxDiscountField = document.getElementById('maxDiscountField');
+    const maxDiscountInput = document.getElementById('maxDiscount');
+
+    // Convert coupon code to uppercase
+    codeInput.value = codeInput.value.toUpperCase();
+
+    codeInput.addEventListener('input', function () {
+      codeInput.value = codeInput.value.toUpperCase();
+    });
+
+    // Show maximum discount only for percentage coupons
+    function updateMaxDiscountVisibility() {
+
+      const isPercentage = discountType.value === 'percentage';
+
+      maxDiscountField.classList.toggle('d-none', !isPercentage);
+
+      maxDiscountInput.disabled = !isPercentage;
+    }
+
+    discountType.addEventListener('change', updateMaxDiscountVisibility);
+
+    updateMaxDiscountVisibility();
+
+  })();
+</script>
+
+<%- include('partials/admin-footer') %>

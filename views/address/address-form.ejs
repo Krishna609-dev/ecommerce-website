@@ -1,0 +1,72 @@
+<%
+  var isEditing = Boolean(address);
+  var pageTitle = isEditing ? 'Edit address' : 'Add address';
+%>
+<%- include('../partials/header', { title: pageTitle }) %>
+<%- include('../partials/flash') %>
+
+<section class="container py-4 py-md-5">
+  <div class="row justify-content-center">
+    <div class="col-12 col-md-9 col-lg-7 col-xl-6">
+      <div class="card border-0 shadow-sm rounded-4">
+        <div class="card-body p-4 p-md-5">
+          <h1 class="h3 fw-bold mb-4"><%= pageTitle %></h1>
+
+          <% if (errors.length) { %>
+            <div class="alert alert-danger" role="alert" aria-labelledby="addressErrorsTitle">
+              <h2 class="h6 alert-heading" id="addressErrorsTitle">Please fix the following:</h2>
+              <ul class="mb-0">
+                <% errors.forEach(function(item) { %>
+                  <li><%= item.msg %></li>
+                <% }) %>
+              </ul>
+            </div>
+          <% } %>
+
+          <form
+            action="<%= isEditing ? '/addresses/' + encodeURIComponent(String(address._id)) + '?_method=PUT' : '/addresses' %>"
+            method="POST">
+            <div class="mb-3">
+              <label class="form-label" for="fullName">Full name</label>
+              <input class="form-control" id="fullName" name="fullName" type="text" autocomplete="name" value="<%= address ? address.fullName : '' %>" required>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="phone">Phone</label>
+              <input class="form-control" id="phone" name="phone" type="tel" inputmode="numeric" pattern="[0-9]{10}" minlength="10" maxlength="10" autocomplete="tel" aria-describedby="phoneHelp" value="<%= address ? address.phone : '' %>" required>
+              <div class="form-text" id="phoneHelp">Enter a 10-digit phone number.</div>
+            </div>
+
+            <div class="mb-3">
+              <label class="form-label" for="street">Street address</label>
+              <textarea class="form-control" id="street" name="street" rows="3" autocomplete="street-address" required><%= address ? address.street : '' %></textarea>
+            </div>
+
+            <div class="row g-3">
+              <div class="col-12 col-sm-6">
+                <label class="form-label" for="city">City</label>
+                <input class="form-control" id="city" name="city" type="text" autocomplete="address-level2" value="<%= address ? address.city : '' %>" required>
+              </div>
+              <div class="col-12 col-sm-6">
+                <label class="form-label" for="state">State</label>
+                <input class="form-control" id="state" name="state" type="text" autocomplete="address-level1" value="<%= address ? address.state : '' %>" required>
+              </div>
+              <div class="col-12">
+                <label class="form-label" for="pincode">Pincode</label>
+                <input class="form-control" id="pincode" name="pincode" type="text" inputmode="numeric" pattern="[0-9]{6}" minlength="6" maxlength="6" autocomplete="postal-code" aria-describedby="pincodeHelp" value="<%= address ? address.pincode : '' %>" required>
+                <div class="form-text" id="pincodeHelp">Enter a 6-digit pincode.</div>
+              </div>
+            </div>
+
+            <div class="d-flex flex-column flex-sm-row justify-content-end gap-2 mt-4">
+              <a class="btn btn-outline-danger" href="/addresses">Cancel</a>
+              <button class="btn btn-primary" type="submit"><%= isEditing ? 'Save changes' : 'Save address' %></button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/footer') %>
